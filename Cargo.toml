@@ -2,6 +2,7 @@
 authors = ["T.J. Telan <t.telan@gmail.com>"]
 categories = ["parser-implementations", "encoding"]
 description = "A parser for git repo urls based on url crate"
+documentation = "https://docs.rs/git-url-parse"
 edition = "2018"
 keywords = ["git", "url", "parsing"]
 license = "MIT"
