@@ -1,2 +1,2 @@
-# git-parse-url-rs
+# git-url-parse
 Parser of git repo urls for Rust
