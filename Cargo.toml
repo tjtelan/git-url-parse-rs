@@ -1,8 +1,17 @@
 [package]
-name = "git-url-parse"
-version = "0.0.1"
 authors = ["T.J. Telan <t.telan@gmail.com>"]
+categories = ["parser-implementations", "encoding"]
+description = "A parser for git repo urls based on url crate"
 edition = "2018"
+keywords = ["git", "url", "parsing"]
+license = "MIT"
+name = "git-url-parse"
+readme = "README.md"
+repository = "https://github.com/tjtelan/git-url-parse-rs"
+version = "0.0.1"
+
+[badges.maintenance]
+status = "actively-developed"
 
 [dependencies]
 log = "0.4"
