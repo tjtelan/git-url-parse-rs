@@ -1,6 +1,7 @@
 use git_url_parse::GitUrl;
+
 fn main() {
-    //env_logger::init();
+    env_logger::init();
 
     let test_vec = vec![
         "https://github.com/tjtelan/orbitalci.git",
@@ -15,6 +16,7 @@ fn main() {
         "./path/to/repo.git/",
         "./path/to/repo.git",
         "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
+        "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName",
     ];
 
     for test_url in test_vec {

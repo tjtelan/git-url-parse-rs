@@ -134,23 +134,66 @@ impl GitUrl {
             // We're not going to assume anything about metadata from a filepath
             Protocol::File => (None::<String>, None::<String>, name.clone()),
             _ => {
-                // TODO: Add support for parsing out orgs from these urls
-                let _hosts_w_organization_in_path =
-                    vec!["ssh.dev.azure.com", "vs-ssh.visualstudio.com"];
-
                 let mut fullname: Vec<&str> = Vec::new();
 
-                // push organization
-                // push owner
-                fullname.push(splitpath[1]);
-                // push name
-                fullname.push(name.as_str());
+                // TODO: Add support for parsing out orgs from these urls
+                let hosts_w_organization_in_path = vec!["dev.azure.com", "ssh.dev.azure.com"];
+                //vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 
-                (
-                    Some(splitpath[1].to_string()),
-                    None::<String>,
-                    fullname.join("/").to_string(),
-                )
+                match hosts_w_organization_in_path.contains(&normalized.clone().host_str().unwrap())
+                {
+                    true => {
+                        debug!("Found a git provider with an org");
+
+                        // The path differs between git:// and https:// protocols
+
+                        match &protocol {
+                            // Example: "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
+                            Protocol::Ssh => {
+                                // Organization
+                                fullname.push(splitpath[2].clone());
+                                // Project/Owner name
+                                fullname.push(splitpath[1].clone());
+                                // Repo name
+                                fullname.push(splitpath[0].clone());
+
+                                (
+                                    Some(splitpath[1].to_string()),
+                                    Some(splitpath[2].to_string()),
+                                    fullname.join("/").to_string(),
+                                )
+                            }
+                            // Example: "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName",
+                            Protocol::Https => {
+                                // Organization
+                                fullname.push(splitpath[3].clone());
+                                // Project/Owner name
+                                fullname.push(splitpath[2].clone());
+                                // Repo name
+                                fullname.push(splitpath[0].clone());
+
+                                (
+                                    Some(splitpath[2].to_string()),
+                                    Some(splitpath[3].to_string()),
+                                    fullname.join("/").to_string(),
+                                )
+                            }
+                            _ => panic!("Protocol not supported for host"),
+                        }
+                    }
+                    false => {
+                        // push owner
+                        fullname.push(splitpath[1]);
+                        // push name
+                        fullname.push(name.as_str());
+
+                        (
+                            Some(splitpath[1].to_string()),
+                            None::<String>,
+                            fullname.join("/").to_string(),
+                        )
+                    }
+                }
             }
         };
 

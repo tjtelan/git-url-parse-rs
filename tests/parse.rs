@@ -183,7 +183,7 @@ fn https_user_azure_devops() {
     let expected = GitUrl {
         href: test_url.to_string(),
         host: Some("dev.azure.com".to_string()),
-        name: "name".to_string(),
+        name: "repo".to_string(),
         owner: Some("project".to_string()),
         organization: Some("organization".to_string()),
         fullname: "organization/project/repo".to_string(),
