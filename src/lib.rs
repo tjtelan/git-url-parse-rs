@@ -7,7 +7,7 @@ use strum_macros::{EnumString, EnumVariantNames};
 use url::Url;
 
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames)]
+#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Protocol {
     /// Represents No url scheme
@@ -31,7 +31,7 @@ pub enum Protocol {
 /// Internally during parsing the url is sanitized and uses the `url` crate to perform
 /// the majority of the parsing effort, and with some extra handling to expose
 /// metadata used my many git hosting services
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GitUrl {
     /// The input url
     pub href: String,
