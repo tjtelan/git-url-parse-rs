@@ -21,10 +21,11 @@ fn main() -> Result<()> {
     ];
 
     for test_url in test_vec {
-        let parsed = GitUrl::parse(test_url)?;
-        println!("Original: {}", test_url);
-        println!("Parsed:   {}", parsed);
-        println!("{:?}\n", parsed);
+        println!("Original:         {}", test_url);
+        println!(
+            "Parsed + Trimmed: {}\n",
+            GitUrl::parse(test_url)?.trim_auth()
+        );
     }
     Ok(())
 }

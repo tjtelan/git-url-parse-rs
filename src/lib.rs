@@ -3,13 +3,13 @@ use log::debug;
 use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
-use strum_macros::{EnumString, EnumVariantNames};
+use strum_macros::{Display, EnumString, EnumVariantNames};
 use url::Url;
 
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone)]
+#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
-pub enum Protocol {
+pub enum Scheme {
     /// Represents No url scheme
     Unspecified,
     /// Represents `file://` url scheme
@@ -27,14 +27,12 @@ pub enum Protocol {
     GitSsh,
 }
 
-/// GitUrl represents an input url `href` that is a url used by git
+/// GitUrl represents an input url that is a url used by git
 /// Internally during parsing the url is sanitized and uses the `url` crate to perform
 /// the majority of the parsing effort, and with some extra handling to expose
 /// metadata used my many git hosting services
 #[derive(Debug, PartialEq, Clone)]
 pub struct GitUrl {
-    /// The input url
-    pub href: String,
     /// The fully qualified domain name (FQDN) or IP of the repo
     pub host: Option<String>,
     /// The name of the repo
@@ -45,8 +43,8 @@ pub struct GitUrl {
     pub organization: Option<String>,
     /// The full name of the repo, formatted as "owner/name"
     pub fullname: String,
-    /// The git url protocol
-    pub protocol: Protocol,
+    /// The git url scheme
+    pub scheme: Scheme,
     /// The authentication user
     pub user: Option<String>,
     /// The oauth token (could appear in the https urls)
@@ -57,40 +55,89 @@ pub struct GitUrl {
     pub path: String,
     /// Indicate if url uses the .git suffix
     pub git_suffix: bool,
+    /// Indicate if url explicitly uses its scheme
+    pub scheme_prefix: bool,
 }
 
+/// Build the printable GitUrl from its components
 impl fmt::Display for GitUrl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.href)
+        let scheme_prefix = match self.scheme_prefix {
+            true => format!("{}://", self.scheme),
+            false => format!(""),
+        };
+
+        let auth_info = match self.scheme {
+            Scheme::Ssh | Scheme::Git | Scheme::GitSsh => {
+                if let Some(user) = &self.user {
+                    format!("{}@", user)
+                } else {
+                    format!("")
+                }
+            }
+            Scheme::Http | Scheme::Https => match (&self.user, &self.token) {
+                (Some(user), Some(token)) => format!("{}:{}@", user, token),
+                (Some(user), None) => format!("{}@", user),
+                (None, Some(token)) => format!("{}@", token),
+                (None, None) => format!(""),
+            },
+            _ => format!(""),
+        };
+
+        let host = match &self.host {
+            Some(host) => format!("{}", host),
+            None => format!(""),
+        };
+
+        let port = match &self.port {
+            Some(p) => format!(":{}", p),
+            None => format!(""),
+        };
+
+        let path = match &self.scheme {
+            Scheme::Ssh => {
+                if self.port.is_some() {
+                    format!("/{}", &self.path)
+                } else {
+                    format!(":{}", &self.path)
+                }
+            }
+            _ => format!("{}", &self.path),
+        };
+
+        let git_url_str = format!("{}{}{}{}{}", scheme_prefix, auth_info, host, port, path);
+
+        write!(f, "{}", git_url_str)
     }
 }
 
 impl Default for GitUrl {
     fn default() -> Self {
         GitUrl {
-            href: "".to_string(),
             host: None,
             name: "".to_string(),
             owner: None,
             organization: None,
             fullname: "".to_string(),
-            protocol: Protocol::Unspecified,
+            scheme: Scheme::Unspecified,
             user: None,
             token: None,
             port: None,
             path: "".to_string(),
-            git_suffix: true,
+            git_suffix: false,
+            scheme_prefix: false,
         }
     }
 }
 
 impl GitUrl {
-    /// Returns a new `GitUrl` with provided `url` set as `href`
-    pub fn new(url: &str) -> GitUrl {
-        GitUrl {
-            href: url.to_string(),
-            ..Default::default()
-        }
+    /// Returns `GitUrl` after removing `user` and `token` values
+    /// Intended use-case is for non-destructive printing GitUrl excluding any embedded auth info
+    pub fn trim_auth(&self) -> GitUrl {
+        let mut new_giturl = self.clone();
+        new_giturl.user = None;
+        new_giturl.token = None;
+        new_giturl
     }
 
     /// Returns a `Result<GitUrl>` after normalizing and parsing `url` for metadata
@@ -99,12 +146,12 @@ impl GitUrl {
         let normalized = normalize_url(url).expect("Url normalization failed");
 
         // Some pre-processing for paths
-        let protocol = Protocol::from_str(normalized.scheme())
-            .expect(&format!("Protocol unsupported: {:?}", normalized.scheme()));
+        let scheme = Scheme::from_str(normalized.scheme())
+            .expect(&format!("Scheme unsupported: {:?}", normalized.scheme()));
 
         // Normalized ssh urls can always have their first '/' removed
-        let urlpath = match &protocol {
-            Protocol::Ssh => {
+        let urlpath = match &scheme {
+            Scheme::Ssh => {
                 // At the moment, we're relying on url::Url's parse() behavior to not duplicate
                 // the leading '/' when we normalize
                 normalized.path()[1..].to_string()
@@ -130,9 +177,9 @@ impl GitUrl {
 
         let name = splitpath[0].trim_end_matches(".git").to_string();
 
-        let (owner, organization, fullname) = match &protocol {
+        let (owner, organization, fullname) = match &scheme {
             // We're not going to assume anything about metadata from a filepath
-            Protocol::File => (None::<String>, None::<String>, name.clone()),
+            Scheme::File => (None::<String>, None::<String>, name.clone()),
             _ => {
                 let mut fullname: Vec<&str> = Vec::new();
 
@@ -145,11 +192,11 @@ impl GitUrl {
                     true => {
                         debug!("Found a git provider with an org");
 
-                        // The path differs between git:// and https:// protocols
+                        // The path differs between git:// and https:// schemes
 
-                        match &protocol {
+                        match &scheme {
                             // Example: "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
-                            Protocol::Ssh => {
+                            Scheme::Ssh => {
                                 // Organization
                                 fullname.push(splitpath[2].clone());
                                 // Project/Owner name
@@ -164,7 +211,7 @@ impl GitUrl {
                                 )
                             }
                             // Example: "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName",
-                            Protocol::Https => {
+                            Scheme::Https => {
                                 // Organization
                                 fullname.push(splitpath[3].clone());
                                 // Project/Owner name
@@ -178,7 +225,7 @@ impl GitUrl {
                                     fullname.join("/").to_string(),
                                 )
                             }
-                            _ => panic!("Protocol not supported for host"),
+                            _ => panic!("Scheme not supported for host"),
                         }
                     }
                     false => {
@@ -198,7 +245,6 @@ impl GitUrl {
         };
 
         Ok(GitUrl {
-            href: url.to_string(),
             host: match normalized.host_str() {
                 Some(h) => Some(h.to_string()),
                 None => None,
@@ -207,7 +253,7 @@ impl GitUrl {
             owner: owner,
             organization: organization,
             fullname: fullname,
-            protocol: Protocol::from_str(normalized.scheme()).expect("Protocol unsupported"),
+            scheme: Scheme::from_str(normalized.scheme()).expect("Scheme unsupported"),
             user: match normalized.username().to_string().len() {
                 0 => None,
                 _ => Some(normalized.username().to_string()),
@@ -219,6 +265,7 @@ impl GitUrl {
             port: normalized.port(),
             path: urlpath,
             git_suffix: *git_suffix_check,
+            scheme_prefix: url.contains("://"),
             ..Default::default()
         })
     }
@@ -269,35 +316,38 @@ fn normalize_file_path(filepath: &str) -> Result<Url> {
 pub fn normalize_url(url: &str) -> Result<Url> {
     debug!("Processing: {:?}", &url);
 
-    let url_parse = Url::parse(&url);
+    // We're going to remove any trailing slash before running through Url::parse
+    let trim_url = url.trim_end_matches("/");
+
+    let url_parse = Url::parse(&trim_url);
 
     Ok(match url_parse {
         Ok(u) => {
-            match Protocol::from_str(u.scheme()) {
+            match Scheme::from_str(u.scheme()) {
                 Ok(_p) => u,
                 Err(_e) => {
                     // Catch case when an ssh url is given w/o a user
                     debug!("Scheme parse fail. Assuming a userless ssh url");
-                    normalize_ssh_url(url)?
+                    normalize_ssh_url(trim_url)?
                 }
             }
         }
         Err(_e) => {
             // e will most likely be url::ParseError::RelativeUrlWithoutBase
-            // If we're here, we're only looking for Protocol::Ssh or Protocol::File
+            // If we're here, we're only looking for Scheme::Ssh or Scheme::File
 
-            // Assuming we have found Protocol::Ssh if we can find an "@" before ":"
-            // Otherwise we have Protocol::File
+            // Assuming we have found Scheme::Ssh if we can find an "@" before ":"
+            // Otherwise we have Scheme::File
             let re = Regex::new(r"^\S+(@)\S+(:).*$")?;
 
-            match re.is_match(&url) {
+            match re.is_match(&trim_url) {
                 true => {
-                    debug!("Protocol::SSH match for normalization");
-                    normalize_ssh_url(url)?
+                    debug!("Scheme::SSH match for normalization");
+                    normalize_ssh_url(trim_url)?
                 }
                 false => {
-                    debug!("Protocol::File match for normalization");
-                    normalize_file_path(&format!("{}", url))?
+                    debug!("Scheme::File match for normalization");
+                    normalize_file_path(&format!("{}", trim_url))?
                 }
             }
         }

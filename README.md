@@ -28,6 +28,7 @@ Internally uses `Url::parse()` from the [Url](https://crates.io/crates/url) crat
 
 ```shell
 $ RUST_LOG=git_url_parse cargo run --example multi
+$ RUST_LOG=git_url_parse cargo run --example trim_auth 
 ```
 
 ### Simple usage and output
@@ -42,6 +43,6 @@ fn main() {
 
 ### Example Output
 ```bash
-SSH: Ok(GitUrl { href: "git@github.com:tjtelan/git-url-parse-rs.git", host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", protocol: Ssh, user: Some("git"), token: None, port: None, path: "tjtelan/git-url-parse-rs.git", git_suffix: true })
-HTTPS: Ok(GitUrl { href: "https://github.com/tjtelan/git-url-parse-rs", host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", protocol: Https, user: None, token: None, port: None, path: "/tjtelan/git-url-parse-rs", git_suffix: false })
+SSH: Ok(GitUrl { host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", scheme: Ssh, user: Some("git"), token: None, port: None, path: "tjtelan/git-url-parse-rs.git", git_suffix: true, scheme_prefix: false })
+HTTPS: Ok(GitUrl { host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", scheme: Https, user: None, token: None, port: None, path: "/tjtelan/git-url-parse-rs", git_suffix: false, scheme_prefix: true })
 ```
