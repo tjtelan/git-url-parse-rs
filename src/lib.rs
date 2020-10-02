@@ -248,16 +248,34 @@ impl GitUrl {
             }
         };
 
-        Ok(GitUrl {
-            host: match normalized.host_str() {
+        let final_scheme = Scheme::from_str(normalized.scheme()).expect("Scheme unsupported");
+
+        let final_host = match final_scheme {
+            Scheme::File => None,
+            _ => match normalized.host_str() {
                 Some(h) => Some(h.to_string()),
                 None => None,
             },
+        };
+
+        let final_path = match final_scheme {
+            Scheme::File => {
+                if let Some(host) = normalized.host_str() {
+                    format!("{}{}", host, urlpath)
+                } else {
+                    urlpath
+                }
+            },
+            _ => urlpath,
+        };
+
+        Ok(GitUrl {
+            host: final_host,
             name: name,
             owner: owner,
             organization: organization,
             fullname: fullname,
-            scheme: Scheme::from_str(normalized.scheme()).expect("Scheme unsupported"),
+            scheme: final_scheme,
             user: match normalized.username().to_string().len() {
                 0 => None,
                 _ => Some(normalized.username().to_string()),
@@ -267,7 +285,7 @@ impl GitUrl {
                 None => None,
             },
             port: normalized.port(),
-            path: urlpath,
+            path: final_path,
             git_suffix: *git_suffix_check,
             scheme_prefix: url.contains("://"),
             ..Default::default()

@@ -247,38 +247,85 @@ fn relative_unix_path() {
     let test_url = "../project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrl {
-        host: Some("host.tld".to_string()),
+        host: None,
         name: "project-name".to_string(),
-        owner: Some("user".to_string()),
+        owner: None,
         organization: None,
-        fullname: "../project-name.git".to_string(),
-        scheme: Scheme::Ftps,
-        user: Some("git".to_string()),
+        fullname: "project-name".to_string(),
+        scheme: Scheme::File,
+        user: None,
         token: None,
         port: None,
         path: "../project-name.git".to_string(),
         git_suffix: true,
-        scheme_prefix: true,
+        scheme_prefix: false,
     };
 
     assert_eq!(parsed, expected);
 }
 
 #[test]
+fn absolute_unix_path() {
+    let test_url = "/path/to/project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: None,
+        name: "project-name".to_string(),
+        owner: None,
+        organization: None,
+        fullname: "project-name".to_string(),
+        scheme: Scheme::File,
+        user: None,
+        token: None,
+        port: None,
+        path: "/path/to/project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: false,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+// Issue #6 - Relative Windows paths will parse into Unix paths
+#[test]
 fn relative_windows_path() {
     let test_url = "..\\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrl {
-        host: Some("host.tld".to_string()),
+        host: None,
         name: "project-name".to_string(),
-        owner: Some("user".to_string()),
+        owner: None,
         organization: None,
-        fullname: "..\\project-name.git".to_string(),
-        scheme: Scheme::Ftps,
-        user: Some("git".to_string()),
+        fullname: "project-name".to_string(),
+        scheme: Scheme::File,
+        user: None,
         token: None,
         port: None,
-        path: "..\\project-name.git".to_string(),
+        path: "../project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: false,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+// Issue #7 - Absolute Windows paths will not parse at all
+#[should_panic(expected = "index out of bounds: the len is 1 but the index is 1")]
+#[test]
+fn absolute_windows_path() {
+    let test_url = "c:\\project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: None,
+        name: "project-name".to_string(),
+        owner: None,
+        organization: None,
+        fullname: "project-name".to_string(),
+        scheme: Scheme::File,
+        user: None,
+        token: None,
+        port: None,
+        path: "c:\\project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
     };
