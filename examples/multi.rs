@@ -16,6 +16,8 @@ fn main() -> Result<()> {
         "~/path/to/repo.git/",
         "./path/to/repo.git/",
         "./path/to/repo.git",
+        "../test_repo",
+        "..\\test_repo",
         "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
         "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName",
     ];

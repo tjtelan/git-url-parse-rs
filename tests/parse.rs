@@ -197,3 +197,91 @@ fn https_user_azure_devops() {
 
     assert_eq!(parsed, expected);
 }
+
+#[test]
+fn ftp_user() {
+    let test_url = "ftp://git@host.tld/user/project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("host.tld".to_string()),
+        name: "project-name".to_string(),
+        owner: Some("user".to_string()),
+        organization: None,
+        fullname: "user/project-name".to_string(),
+        scheme: Scheme::Ftp,
+        user: Some("git".to_string()),
+        token: None,
+        port: None,
+        path: "/user/project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+#[test]
+fn ftps_user() {
+    let test_url = "ftps://git@host.tld/user/project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("host.tld".to_string()),
+        name: "project-name".to_string(),
+        owner: Some("user".to_string()),
+        organization: None,
+        fullname: "user/project-name".to_string(),
+        scheme: Scheme::Ftps,
+        user: Some("git".to_string()),
+        token: None,
+        port: None,
+        path: "/user/project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+#[test]
+fn relative_unix_path() {
+    let test_url = "../project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("host.tld".to_string()),
+        name: "project-name".to_string(),
+        owner: Some("user".to_string()),
+        organization: None,
+        fullname: "../project-name.git".to_string(),
+        scheme: Scheme::Ftps,
+        user: Some("git".to_string()),
+        token: None,
+        port: None,
+        path: "../project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+#[test]
+fn relative_windows_path() {
+    let test_url = "..\\project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("host.tld".to_string()),
+        name: "project-name".to_string(),
+        owner: Some("user".to_string()),
+        organization: None,
+        fullname: "..\\project-name.git".to_string(),
+        scheme: Scheme::Ftps,
+        user: Some("git".to_string()),
+        token: None,
+        port: None,
+        path: "..\\project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}

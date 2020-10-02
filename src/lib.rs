@@ -10,21 +10,25 @@ use url::Url;
 #[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Scheme {
-    /// Represents No url scheme
-    Unspecified,
     /// Represents `file://` url scheme
     File,
+    /// Represents `ftp://` url scheme
+    Ftp,
+    /// Represents `ftps://` url scheme
+    Ftps,
+    /// Represents `git://` url scheme
+    Git,
+    /// Represents `git+ssh://` url scheme
+    #[strum(serialize = "git+ssh")]
+    GitSsh,
     /// Represents `http://` url scheme
     Http,
     /// Represents `https://` url scheme
     Https,
     /// Represents `ssh://` url scheme
     Ssh,
-    /// Represents `git://` url scheme
-    Git,
-    /// Represents `git+ssh://` url scheme
-    #[strum(serialize = "git+ssh")]
-    GitSsh,
+    /// Represents No url scheme
+    Unspecified,
 }
 
 /// GitUrl represents an input url that is a url used by git
