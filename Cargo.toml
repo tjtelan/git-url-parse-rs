@@ -9,7 +9,7 @@ license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
 repository = "https://github.com/tjtelan/git-url-parse-rs"
-version = "0.3.0"
+version = "0.3.1"
 
 [badges.maintenance]
 status = "actively-developed"
@@ -17,8 +17,8 @@ status = "actively-developed"
 [dependencies]
 log = "^0.4"
 url = "^2.2"
-strum = "~0.18"
-strum_macros = "~0.18"
+strum = "^0.20"
+strum_macros = "^0.20"
 anyhow = "^1.0"
 regex = "^1.4"
 
