@@ -1,3 +1,7 @@
+# [0.3.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.0...v0.3.1)
+- Loosen dependency restrictions in `Cargo.toml` ([#12](https://github.com/tjtelan/git-url-parse-rs/issues/12))
+- Update `strum` + `strum_macros` ([#14](https://github.com/tjtelan/git-url-parse-rs/issues/14))
+
 # [0.3.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.2.0...v0.3.0)
 - Add `CHANGELOG.md`
 - Add new schemes `Ftp` and `Ftps`
