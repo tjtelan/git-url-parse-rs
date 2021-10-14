@@ -137,3 +137,21 @@ fn multi_git_ssh() {
         "git+ssh://host.tld/user/project-name.git"
     );
 }
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/16
+#[test]
+fn null_in_input1() {
+    let test_url = "////////ws///////////*,\u{0}\u{0}^\u{0}\u{0}\u{0}\u{0}@2\u{1}\u{0}\u{1d})\u{0}\u{0}\u{0}:\u{0}\u{0}\u{0}";
+    let normalized = normalize_url(test_url);
+
+    assert!(normalized.is_err());
+}
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/16
+#[test]
+fn null_in_input2() {
+    let test_url = "?\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{1f}s\u{3}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{5}\u{1}@\u{0}\u{0}\u{4}!e\u{0}\u{0}2\u{1c}^3106://?<!41\u{0}\u{0}\u{0}?\u{0}\u{0}\u{0}\u{0}\u{4}?";
+    let normalized = normalize_url(test_url);
+
+    assert!(normalized.is_err());
+}

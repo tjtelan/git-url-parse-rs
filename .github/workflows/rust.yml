@@ -9,7 +9,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose
+    - name: Stable with rustfmt and clippy
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        components: rustfmt, clippy
+    - uses: Swatinem/rust-cache@v1
+    - name: Cargo fmt
+      run: cargo fmt -- --check
+    - name: Cargo clippy
+      run: cargo clippy
     - name: Run tests
       run: cargo test --verbose
+    - name: Build
+      run: cargo build --release --all-features --verbose
