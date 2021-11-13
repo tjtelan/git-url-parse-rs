@@ -34,7 +34,7 @@ jobs:
         components: rustfmt, clippy
     - uses: Swatinem/rust-cache@v1
     - name: cargo check - {{ matrix.cargo_checks.name }} 
-      run: cargo {{ matrix.cargo_checks.subcommand }}
+      run: cargo ${{ matrix.cargo_checks.subcommand }}
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
