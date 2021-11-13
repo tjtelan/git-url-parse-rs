@@ -3,13 +3,13 @@ authors = ["T.J. Telan <t.telan@gmail.com>"]
 categories = ["parser-implementations", "encoding"]
 description = "A parser for git repo urls based on url crate"
 documentation = "https://docs.rs/git-url-parse"
-edition = "2018"
+edition = "2021"
 keywords = ["git", "url", "parsing"]
 license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
 repository = "https://github.com/tjtelan/git-url-parse-rs"
-version = "0.3.2"
+version = "0.4.0"
 
 [dependencies]
 log = "^0.4"
