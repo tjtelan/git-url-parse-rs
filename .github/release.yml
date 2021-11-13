@@ -1,0 +1,24 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release-notes
+      - CI
+      - CD
+      - test
+      - docs
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+        - Semver-Major
+        - Semver-Minor
+        - breaking-change
+    - title: Exciting New Features 🎉
+      labels:
+        - Semver-Patch
+        - enhancement
+    - title: Bug Fixes
+      labels:
+        - bugfix
+    - title: Other Changes
+      labels:
+        - "*"
