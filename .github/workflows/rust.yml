@@ -1,12 +1,29 @@
 name: git-url-parse 
 
-on: [push]
+on:
+  push:
+    branches: [main, staging, trying]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  ci:
+    name: CI
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        cargo_checks:
+          - name: Enforce default cargo fmt
+            subcommand: fmt -- --check
+          - name: Clippy
+            subcommand: clippy
+          - name: Test
+            subcommand: test --verbose
+          - name: Build
+            subcommand: build --release --all-features --verbose
     steps:
     - uses: actions/checkout@v2
     - name: Stable with rustfmt and clippy
@@ -16,11 +33,13 @@ jobs:
         toolchain: stable
         components: rustfmt, clippy
     - uses: Swatinem/rust-cache@v1
-    - name: Cargo fmt
-      run: cargo fmt -- --check
-    - name: Cargo clippy
-      run: cargo clippy
-    - name: Run tests
-      run: cargo test
-    - name: Build
-      run: cargo build --release --all-features
+    - name: cargo check - {{ matrix.cargo_checks.name }} 
+      run: cargo {{ matrix.cargo_checks.subcommand }}
+  done:
+    name: Done
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Done
+        run: echo "Done!"
