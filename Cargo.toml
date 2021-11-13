@@ -16,7 +16,7 @@ log = "^0.4"
 url = "^2.2"
 strum = "^0.22"
 strum_macros = "^0.22"
-anyhow = "^1.0"
+color-eyre = "^0.5"
 regex = "^1.4"
 
 [dev-dependencies]

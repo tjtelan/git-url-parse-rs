@@ -1,4 +1,5 @@
-use anyhow::{bail, Context, Result};
+use color_eyre::eyre::{eyre, WrapErr};
+use color_eyre::Result;
 use log::debug;
 use regex::Regex;
 use std::fmt;
@@ -229,7 +230,7 @@ impl GitUrl {
                                     fullname.join("/"),
                                 )
                             }
-                            _ => bail!("Scheme not supported for host"),
+                            _ => return Err(eyre!("Scheme not supported for host")),
                         }
                     }
                     false => {
@@ -302,9 +303,7 @@ fn normalize_ssh_url(url: &str) -> Result<Url> {
             debug!("Normalizing ssh url with ports: {:?}", u);
             normalize_url(&format!("ssh://{}:{}/{}", u[0], u[1], u[2]))
         }
-        _default => {
-            bail!("SSH normalization pattern not covered for: {:?}", u);
-        }
+        _default => Err(eyre!("SSH normalization pattern not covered for: {:?}", u)),
     }
 }
 
@@ -330,7 +329,7 @@ pub fn normalize_url(url: &str) -> Result<Url> {
     // Error if there are null bytes within the url
     // https://github.com/tjtelan/git-url-parse-rs/issues/16
     if url.contains('\0') {
-        bail!("Found null bytes within input url before parsing");
+        return Err(eyre!("Found null bytes within input url before parsing"));
     }
 
     // We're going to remove any trailing slash before running through Url::parse
