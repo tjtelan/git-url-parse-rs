@@ -1,5 +1,5 @@
 status = [
-    "CI",
+    "ci",
     "Done",
 ]
 use_squash_merge = true
