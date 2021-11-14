@@ -1,8 +1,8 @@
 # [0.4.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.1...v0.4.0)
 - Migrate to Rust 2021
 - Check for null bytes within input url before parsing (+ adding tests from [#16](https://github.com/tjtelan/git-url-parse-rs/issues/16))
-- Replace all `.expect()` with `anyhow::with_context()?`
-- Replace all `panic!()` with `anyhow::bail!()`
+- Replace `anyhow` with `color-eyre`
+- Replace panic behavior with returning `Err()`
 - Update dependencies
 - Clippy/rustfmt fixes + add clippy/rustfmt checks to CI
 
