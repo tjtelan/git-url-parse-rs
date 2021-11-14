@@ -2,7 +2,9 @@ name: git-url-parse
 
 on:
   push:
-    branches: [main, staging, trying]
+    branches:
+      - staging
+      - trying
   pull_request:
     branches: [main]
 
