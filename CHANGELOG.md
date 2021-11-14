@@ -1,3 +1,11 @@
+# [0.4.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.1...v0.4.0)
+- Migrate to Rust 2021
+- Check for null bytes within input url before parsing (+ adding tests from [#16](https://github.com/tjtelan/git-url-parse-rs/issues/16))
+- Replace `anyhow` with `color-eyre`
+- Replace panic behavior with returning `Err()`
+- Update dependencies
+- Clippy/rustfmt fixes + add clippy/rustfmt checks to CI
+
 # [0.3.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.0...v0.3.1)
 - Loosen dependency restrictions in `Cargo.toml` ([#12](https://github.com/tjtelan/git-url-parse-rs/issues/12))
 - Update `strum` + `strum_macros` ([#14](https://github.com/tjtelan/git-url-parse-rs/issues/14))
