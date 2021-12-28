@@ -234,6 +234,10 @@ impl GitUrl {
                         }
                     }
                     false => {
+                        if splitpath.len() < 2 {
+                            return Err(eyre!("git utl is not of expected format"));
+                        }
+
                         // push owner
                         fullname.push(splitpath[1]);
                         // push name

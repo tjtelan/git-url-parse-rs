@@ -332,3 +332,12 @@ fn absolute_windows_path() {
 
     assert_eq!(parsed, expected);
 }
+
+#[test]
+fn do_not_panic_when_ssh_url_has_no_org() {
+    let test_url = "git@test.com:repo";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+    assert_eq!(format!("{}", e.err().unwrap()), "git utl is not of expected format");
+}
