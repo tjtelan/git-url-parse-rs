@@ -339,5 +339,5 @@ fn do_not_panic_when_ssh_url_has_no_org() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
-    assert_eq!(format!("{}", e.err().unwrap()), "git utl is not of expected format");
+    assert_eq!(format!("{}", e.err().unwrap()), "git url is not of expected format");
 }
