@@ -310,7 +310,7 @@ fn relative_windows_path() {
 }
 
 // Issue #7 - Absolute Windows paths will not parse at all
-#[should_panic(expected = "index out of bounds: the len is 1 but the index is 1")]
+#[should_panic(expected = "git url is not of expected format")]
 #[test]
 fn absolute_windows_path() {
     let test_url = "c:\\project-name.git";
@@ -331,4 +331,16 @@ fn absolute_windows_path() {
     };
 
     assert_eq!(parsed, expected);
+}
+
+#[test]
+fn do_not_panic_when_ssh_url_has_no_org() {
+    let test_url = "git@test.com:repo";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+    assert_eq!(
+        format!("{}", e.err().unwrap()),
+        "git url is not of expected format"
+    );
 }

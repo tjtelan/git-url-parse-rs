@@ -1,5 +1,5 @@
 use color_eyre::eyre::{eyre, WrapErr};
-use color_eyre::Result;
+pub use color_eyre::Result;
 use log::debug;
 use regex::Regex;
 use std::fmt;
@@ -234,6 +234,10 @@ impl GitUrl {
                         }
                     }
                     false => {
+                        if splitpath.len() < 2 {
+                            return Err(eyre!("git url is not of expected format"));
+                        }
+
                         // push owner
                         fullname.push(splitpath[1]);
                         // push name
