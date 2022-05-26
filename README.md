@@ -34,17 +34,62 @@ $ RUST_LOG=git_url_parse cargo run --example trim_auth
 ```
 
 ### Simple usage and output
+
+```bash
+$ cargo run --example readme
+```
+
 ```rust
 use git_url_parse::GitUrl;
 
 fn main() {
-    println!("SSH: {:?}", GitUrl::parse("git@github.com:tjtelan/git-url-parse-rs.git"));
-    println!("HTTPS: {:?}", GitUrl::parse("https://github.com/tjtelan/git-url-parse-rs"));
+    println!("SSH: {:#?}", GitUrl::parse("git@github.com:tjtelan/git-url-parse-rs.git"));
+    println!("HTTPS: {:#?}", GitUrl::parse("https://github.com/tjtelan/git-url-parse-rs"));
 }
 ```
 
 ### Example Output
 ```bash
-SSH: Ok(GitUrl { host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", scheme: Ssh, user: Some("git"), token: None, port: None, path: "tjtelan/git-url-parse-rs.git", git_suffix: true, scheme_prefix: false })
-HTTPS: Ok(GitUrl { host: Some("github.com"), name: "git-url-parse-rs", owner: Some("tjtelan"), organization: None, fullname: "tjtelan/git-url-parse-rs", scheme: Https, user: None, token: None, port: None, path: "/tjtelan/git-url-parse-rs", git_suffix: false, scheme_prefix: true })
+SSH: Ok(
+    GitUrl {
+        host: Some(
+            "github.com",
+        ),
+        name: "git-url-parse-rs",
+        owner: Some(
+            "tjtelan",
+        ),
+        organization: None,
+        fullname: "tjtelan/git-url-parse-rs",
+        scheme: Ssh,
+        user: Some(
+            "git",
+        ),
+        token: None,
+        port: None,
+        path: "tjtelan/git-url-parse-rs.git",
+        git_suffix: true,
+        scheme_prefix: false,
+    },
+)
+HTTPS: Ok(
+    GitUrl {
+        host: Some(
+            "github.com",
+        ),
+        name: "git-url-parse-rs",
+        owner: Some(
+            "tjtelan",
+        ),
+        organization: None,
+        fullname: "tjtelan/git-url-parse-rs",
+        scheme: Https,
+        user: None,
+        token: None,
+        port: None,
+        path: "/tjtelan/git-url-parse-rs",
+        git_suffix: false,
+        scheme_prefix: true,
+    },
+)
 ```
