@@ -1,3 +1,9 @@
+# [0.4.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.0...v0.4.1)
+- Fix panic case when SSH url (without org) not in `user@host.tld:acct/repo` format [#21](https://github.com/tjtelan/git-url-parse-rs/issues/21)
+- Replace missed `unwrap()` panic in business logic
+- Update dependencies
+- Clippy fixes
+
 # [0.4.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.1...v0.4.0)
 - Migrate to Rust 2021
 - Check for null bytes within input url before parsing (+ adding tests from [#16](https://github.com/tjtelan/git-url-parse-rs/issues/16))

@@ -69,7 +69,7 @@ impl fmt::Display for GitUrl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let scheme_prefix = match self.scheme_prefix {
             true => format!("{}://", self.scheme),
-            false => format!(""),
+            false => String::new(),
         };
 
         let auth_info = match self.scheme {
@@ -77,26 +77,26 @@ impl fmt::Display for GitUrl {
                 if let Some(user) = &self.user {
                     format!("{}@", user)
                 } else {
-                    format!("")
+                    String::new()
                 }
             }
             Scheme::Http | Scheme::Https => match (&self.user, &self.token) {
                 (Some(user), Some(token)) => format!("{}:{}@", user, token),
                 (Some(user), None) => format!("{}@", user),
                 (None, Some(token)) => format!("{}@", token),
-                (None, None) => format!(""),
+                (None, None) => String::new(),
             },
-            _ => format!(""),
+            _ => String::new(),
         };
 
         let host = match &self.host {
             Some(host) => host.to_string(),
-            None => format!(""),
+            None => String::new(),
         };
 
         let port = match &self.port {
             Some(p) => format!(":{}", p),
-            None => format!(""),
+            None => String::new(),
         };
 
         let path = match &self.scheme {
@@ -193,7 +193,11 @@ impl GitUrl {
                 let hosts_w_organization_in_path = vec!["dev.azure.com", "ssh.dev.azure.com"];
                 //vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 
-                match hosts_w_organization_in_path.contains(&normalized.host_str().unwrap()) {
+                let host_str = normalized
+                    .host_str()
+                    .ok_or(eyre!("Host from URL could not be represented as str"))?;
+
+                match hosts_w_organization_in_path.contains(&host_str) {
                     true => {
                         debug!("Found a git provider with an org");
 

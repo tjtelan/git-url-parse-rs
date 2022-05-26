@@ -334,7 +334,7 @@ fn absolute_windows_path() {
 }
 
 #[test]
-fn do_not_panic_when_ssh_url_has_no_org() {
+fn ssh_user_path_not_acctname_reponame_format() {
     let test_url = "git@test.com:repo";
     let e = GitUrl::parse(test_url);
 
