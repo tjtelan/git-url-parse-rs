@@ -193,7 +193,11 @@ impl GitUrl {
                 let hosts_w_organization_in_path = vec!["dev.azure.com", "ssh.dev.azure.com"];
                 //vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 
-                match hosts_w_organization_in_path.contains(&normalized.host_str().unwrap()) {
+                let host_str = normalized
+                    .host_str()
+                    .ok_or(eyre!("Host from URL could not be represented as str"))?;
+
+                match hosts_w_organization_in_path.contains(&host_str) {
                     true => {
                         debug!("Found a git provider with an org");
 
