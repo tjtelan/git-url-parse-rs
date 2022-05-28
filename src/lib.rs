@@ -238,17 +238,23 @@ impl GitUrl {
                         }
                     }
                     false => {
-                        if splitpath.len() < 2 {
+                        if !url.starts_with("ssh") && splitpath.len() < 2 {
                             return Err(eyre!("git url is not of expected format"));
                         }
 
+                        let position = match splitpath.len() {
+                            0 => return Err(eyre!("git url is not of expected format")),
+                            1 => 0,
+                            _ => 1,
+                        };
+
                         // push owner
-                        fullname.push(splitpath[1]);
+                        fullname.push(splitpath[position]);
                         // push name
                         fullname.push(name.as_str());
 
                         (
-                            Some(splitpath[1].to_string()),
+                            Some(splitpath[position].to_string()),
                             None::<String>,
                             fullname.join("/"),
                         )

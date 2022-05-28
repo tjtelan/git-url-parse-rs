@@ -344,3 +344,25 @@ fn ssh_user_path_not_acctname_reponame_format() {
         "git url is not of expected format"
     );
 }
+
+#[test]
+fn ssh_without_owner() {
+    let test_url = "ssh://f589726c3611:29418/repo";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("f589726c3611".to_string()),
+        name: "repo".to_string(),
+        owner: Some("repo".to_string()),
+        organization: None,
+        fullname: "repo/repo".to_string(),
+        scheme: Scheme::Ssh,
+        user: None,
+        token: None,
+        port: Some(29418),
+        path: "repo".to_string(),
+        git_suffix: false,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
