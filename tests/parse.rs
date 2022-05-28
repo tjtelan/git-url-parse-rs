@@ -346,7 +346,7 @@ fn ssh_user_path_not_acctname_reponame_format() {
 }
 
 #[test]
-fn ssh_without_owner() {
+fn ssh_without_organization() {
     let test_url = "ssh://f589726c3611:29418/repo";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrl {
