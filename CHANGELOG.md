@@ -1,5 +1,9 @@
+# [0.4.2](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.1...v0.4.2)
+- Replace `log` crate with `tracing` ([#20](https://github.com/tjtelan/git-url-parse-rs/issues/20))
+- Offer workaround for Gerrit source code ([#24](https://github.com/tjtelan/git-url-parse-rs/issues/24))
+
 # [0.4.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.0...v0.4.1)
-- Fix panic case when SSH url (without org) not in `user@host.tld:acct/repo` format [#21](https://github.com/tjtelan/git-url-parse-rs/issues/21)
+- Fix panic case when SSH url (without org) not in `user@host.tld:acct/repo` format ([#21](https://github.com/tjtelan/git-url-parse-rs/issues/21))
 - Replace missed `unwrap()` panic in business logic
 - Update dependencies
 - Clippy fixes
