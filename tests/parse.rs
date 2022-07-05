@@ -366,3 +366,25 @@ fn ssh_without_organization() {
 
     assert_eq!(parsed, expected);
 }
+
+#[test]
+fn git() {
+    let test_url = "git:github.com/owner/name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("github.com".to_string()),
+        name: "name".to_string(),
+        owner: Some("owner".to_string()),
+        organization: None,
+        fullname: "owner/name".to_string(),
+        scheme: Scheme::Git,
+        user: None,
+        token: None,
+        port: None,
+        path: "/owner/name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}

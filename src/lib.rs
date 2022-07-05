@@ -294,7 +294,7 @@ impl GitUrl {
             port: normalized.port(),
             path: final_path,
             git_suffix: *git_suffix_check,
-            scheme_prefix: url.contains("://"),
+            scheme_prefix: url.contains("://") || url.starts_with("git:"),
         })
     }
 }
@@ -349,7 +349,17 @@ pub fn normalize_url(url: &str) -> Result<Url> {
     // We're going to remove any trailing slash before running through Url::parse
     let trim_url = url.trim_end_matches('/');
 
-    let url_parse = Url::parse(trim_url);
+    // normalize short git url notation: git:host/path
+    let url_to_parse = if Regex::new(r"^git:[^/]")
+        .with_context(|| "Failed to build short git url regex for testing against url".to_string())?
+        .is_match(trim_url)
+    {
+        trim_url.replace("git:", "git://")
+    } else {
+        trim_url.to_string()
+    };
+
+    let url_parse = Url::parse(&url_to_parse);
 
     Ok(match url_parse {
         Ok(u) => {
