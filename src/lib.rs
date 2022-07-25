@@ -8,7 +8,7 @@ use tracing::debug;
 use url::Url;
 
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone, Display, Copy)]
+#[derive(Debug, PartialEq, Eq, EnumString, EnumVariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Scheme {
     /// Represents `file://` url scheme
@@ -36,7 +36,7 @@ pub enum Scheme {
 /// Internally during parsing the url is sanitized and uses the `url` crate to perform
 /// the majority of the parsing effort, and with some extra handling to expose
 /// metadata used my many git hosting services
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct GitUrl {
     /// The fully qualified domain name (FQDN) or IP of the repo
     pub host: Option<String>,
@@ -132,6 +132,14 @@ impl Default for GitUrl {
             git_suffix: false,
             scheme_prefix: false,
         }
+    }
+}
+
+impl FromStr for GitUrl {
+    type Err = color_eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        GitUrl::parse(s)
     }
 }
 
