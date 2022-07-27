@@ -8,7 +8,7 @@ use tracing::debug;
 use url::Url;
 
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, EnumString, EnumVariantNames, Clone, Display, Copy)]
+#[derive(Debug, PartialEq, Eq, EnumString, EnumVariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Scheme {
     /// Represents `file://` url scheme
@@ -36,7 +36,7 @@ pub enum Scheme {
 /// Internally during parsing the url is sanitized and uses the `url` crate to perform
 /// the majority of the parsing effort, and with some extra handling to expose
 /// metadata used my many git hosting services
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct GitUrl {
     /// The fully qualified domain name (FQDN) or IP of the repo
     pub host: Option<String>,
@@ -132,6 +132,14 @@ impl Default for GitUrl {
             git_suffix: false,
             scheme_prefix: false,
         }
+    }
+}
+
+impl FromStr for GitUrl {
+    type Err = color_eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        GitUrl::parse(s)
     }
 }
 
@@ -294,7 +302,7 @@ impl GitUrl {
             port: normalized.port(),
             path: final_path,
             git_suffix: *git_suffix_check,
-            scheme_prefix: url.contains("://"),
+            scheme_prefix: url.contains("://") || url.starts_with("git:"),
         })
     }
 }
@@ -349,7 +357,17 @@ pub fn normalize_url(url: &str) -> Result<Url> {
     // We're going to remove any trailing slash before running through Url::parse
     let trim_url = url.trim_end_matches('/');
 
-    let url_parse = Url::parse(trim_url);
+    // normalize short git url notation: git:host/path
+    let url_to_parse = if Regex::new(r"^git:[^/]")
+        .with_context(|| "Failed to build short git url regex for testing against url".to_string())?
+        .is_match(trim_url)
+    {
+        trim_url.replace("git:", "git://")
+    } else {
+        trim_url.to_string()
+    };
+
+    let url_parse = Url::parse(&url_to_parse);
 
     Ok(match url_parse {
         Ok(u) => {

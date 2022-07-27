@@ -10,6 +10,14 @@ fn git() {
 }
 
 #[test]
+fn git2() {
+    let test_url = "git:host.tld/user/project-name.git";
+    let normalized = normalize_url(test_url).expect("Normalizing url failed");
+
+    assert_eq!(normalized.as_str(), "git://host.tld/user/project-name.git");
+}
+
+#[test]
 fn http() {
     let test_url = "http://host.tld/user/project-name.git";
     let normalized = normalize_url(test_url).expect("Normalizing url failed");
