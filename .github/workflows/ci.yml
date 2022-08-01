@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Generate changelog
-        uses: docker:://githubchangeloggenerator/github-changelog-generator
+        uses: docker://githubchangeloggenerator/github-changelog-generator
         with:
           args: >-
             --config-file ./.github_changelog_generator
