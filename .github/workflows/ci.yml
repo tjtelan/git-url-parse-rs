@@ -48,11 +48,11 @@ jobs:
       - name: verify files
         run: ls -al
       - name: Generate changelog
-        uses: docker://githubchangeloggenerator/github-changelog-generator
+        uses: addnab/docker-run-action@v3
         with:
-          volumes:
-            - /home/runner/work/git-url-parse-rs/git-url-parse-rs:/usr/local/src/your-app
-          args: >-
+          image: githubchangeloggenerator/github-changelog-generator:latest
+          options: -v ${{ github.workspace }}:/usr/local/src/your-app
+          run: |
             --config-file ./.github_changelog_generator
         #    --token "${{ secrets.GITHUB_TOKEN }}"
       - name: Print generated changelog
