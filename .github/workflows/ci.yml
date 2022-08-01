@@ -38,10 +38,51 @@ jobs:
     - uses: Swatinem/rust-cache@v1
     - name: cargo check - ${{ matrix.cargo_checks.name }} 
       run: cargo ${{ matrix.cargo_checks.subcommand }}
+
+  generate_changelog:
+    name: Generate changelog
+    runs-on: ubuntu-latest
+    #permissions: read-all
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate changelog
+        uses: docker:://githubchangeloggenerator/github-changelog-generator
+        with:
+          args: >-
+            --config-file ./.github_changelog_generator
+        #    --token "${{ secrets.GITHUB_TOKEN }}"
+      - name: Upload tarball as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog-preview
+          path: CHANGELOG-generated.md
+          retention-days: 7
+
+  update_unreleased_changelog:
+    name: Update Unreleased changelog
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    needs:
+      - generate_changelog
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v2
+      - name: github cli login
+        run: gh auth login --with-token < <(echo ${{ secrets.GITHUB_TOKEN }})
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: CHANGELOG-genereated.md
+      - name: Publish artifact
+        run: |
+          gh release upload -R tjtelan/git-url-parse-rs --clobber unreleased CHANGELOG-generated.md 
+
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs: [ci]
+    needs: 
+      - ci
+      - update_unreleased_changelog
     runs-on: ubuntu-latest
     steps:
       - name: Done

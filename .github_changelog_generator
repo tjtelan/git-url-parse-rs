@@ -1,0 +1,6 @@
+user=tjtelan
+project=git-url-parse-rs
+output=CHANGELOG-generated.md
+exclude-labels=duplicate,question,invalid,wontfix
+base=CHANGELOG.md
+unreleased-only=true
