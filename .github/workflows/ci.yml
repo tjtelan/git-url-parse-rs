@@ -94,7 +94,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     needs: 
       - ci
-      - update_unreleased_changelog
     runs-on: ubuntu-latest
     steps:
       - name: Done
