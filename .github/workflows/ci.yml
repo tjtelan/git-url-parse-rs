@@ -51,6 +51,8 @@ jobs:
           args: >-
             --config-file ./.github_changelog_generator
         #    --token "${{ secrets.GITHUB_TOKEN }}"
+      - name: Print generated changelog
+        run: cat CHANGELOG-generated.md
       - name: Upload tarball as artifact
         uses: actions/upload-artifact@v2
         with:
