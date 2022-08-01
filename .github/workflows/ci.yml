@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
       - name: Print changelog
-        run: echo '${{ steps.build_changelog.outputs.var }}''
+        run: echo '${{ steps.build_changelog.outputs.changelog }}''
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
