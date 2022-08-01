@@ -45,44 +45,15 @@ jobs:
     #permissions: read-all
     steps:
       - uses: actions/checkout@v2
-      - name: verify files
-        run: ls -al
-      - name: Generate changelog
-        uses: heinrichreimer/github-changelog-generator-action@v2.3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
-
-      #- name: Print changelog
-      #  run: cat CHANGELOG-generated.md
-
-
-      #  uses: addnab/docker-run-action@v3
-      #  with:
-      #    image: githubchangeloggenerator/github-changelog-generator:latest
-      #    options: -v ${{ github.workspace }}:/usr/local/src/your-app
-      #    run: github_changelog_generator --config-file ./.github_changelog_generator
-      #  #    --token "${{ secrets.GITHUB_TOKEN }}"
-
-
-  #update_unreleased_changelog:
-  #  name: Update Unreleased changelog
-  #  #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-  #  needs:
-  #    - generate_changelog
-  #  runs-on: ubuntu-latest
-  #  permissions: write-all
-  #  steps:
-  #    - uses: actions/checkout@v2
-  #    - name: github cli login
-  #      run: gh auth login --with-token < <(echo ${{ secrets.GITHUB_TOKEN }})
-  #    - name: Download artifact
-  #      uses: actions/download-artifact@v2
-  #      with:
-  #        name: changelog-preview
-  #    - name: Publish artifact
-  #      run: |
-  #        gh release upload -R tjtelan/git-url-parse-rs --clobber Unreleased CHANGELOG-generated.md 
-
+      - name: "Build Changelog"
+        id: build_changelog
+        uses: mikepenz/release-changelog-builder-action@{latest-release}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
+      - name: Print changelog
+        env:
+          OUTPUT: ${{ steps.build_changelog.outputs }}
+        run: echo $OUTPUT
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
