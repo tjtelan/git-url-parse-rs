@@ -50,6 +50,8 @@ jobs:
       - name: Generate changelog
         uses: docker://githubchangeloggenerator/github-changelog-generator
         with:
+          volumes:
+            - /home/runner/work/git-url-parse-rs/git-url-parse-rs:/usr/local/src/your-app
           args: >-
             --config-file ./.github_changelog_generator
         #    --token "${{ secrets.GITHUB_TOKEN }}"
