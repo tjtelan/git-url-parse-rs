@@ -48,20 +48,25 @@ jobs:
       - name: verify files
         run: ls -al
       - name: Generate changelog
-        uses: addnab/docker-run-action@v3
+        uses: heinrichreimer/github-changelog-generator-action@v2.3
         with:
-          image: githubchangeloggenerator/github-changelog-generator:latest
-          options: -v ${{ github.workspace }}:/usr/local/src/your-app
-          run: github_changelog_generator --config-file ./.github_changelog_generator
-        #    --token "${{ secrets.GITHUB_TOKEN }}"
-      - name: Print generated changelog
-        run: cat CHANGELOG-generated.md
-      - name: Upload tarball as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: changelog-preview
-          path: CHANGELOG-generated.md
-          retention-days: 7
+          token: ${{ secrets.GITHUB_TOKEN }} 
+          user: tjtelan
+          project: git-url-parse-rs
+          release_branch: main
+          exclude-labels: duplicate,question,invalid,wontfix
+          base: CHANGELOG-generated.md
+          output:
+
+
+
+      #  uses: addnab/docker-run-action@v3
+      #  with:
+      #    image: githubchangeloggenerator/github-changelog-generator:latest
+      #    options: -v ${{ github.workspace }}:/usr/local/src/your-app
+      #    run: github_changelog_generator --config-file ./.github_changelog_generator
+      #  #    --token "${{ secrets.GITHUB_TOKEN }}"
+
 
   update_unreleased_changelog:
     name: Update Unreleased changelog
