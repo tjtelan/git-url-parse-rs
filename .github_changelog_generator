@@ -2,4 +2,5 @@ user=tjtelan
 project=git-url-parse-rs
 exclude-labels=duplicate,question,invalid,wontfix
 base=CHANGELOG.md
+output=CHANGELOG-generated.md
 unreleased-only=true
