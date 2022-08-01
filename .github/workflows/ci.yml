@@ -52,7 +52,7 @@ jobs:
         with:
           image: githubchangeloggenerator/github-changelog-generator:latest
           options: -v ${{ github.workspace }}:/usr/local/src/your-app
-          run: github-changelog-generator --config-file ./.github_changelog_generator
+          run: github_changelog_generator --config-file ./.github_changelog_generator
         #    --token "${{ secrets.GITHUB_TOKEN }}"
       - name: Print generated changelog
         run: cat CHANGELOG-generated.md
