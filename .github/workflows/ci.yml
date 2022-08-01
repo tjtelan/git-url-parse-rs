@@ -75,7 +75,7 @@ jobs:
           name: changelog-preview
       - name: Publish artifact
         run: |
-          gh release upload -R tjtelan/git-url-parse-rs --clobber unreleased CHANGELOG-generated.md 
+          gh release upload -R tjtelan/git-url-parse-rs --clobber Unreleased CHANGELOG-generated.md 
 
   done:
     name: Done
