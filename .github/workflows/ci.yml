@@ -51,12 +51,6 @@ jobs:
         uses: heinrichreimer/github-changelog-generator-action@v2.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }} 
-          user: tjtelan
-          project: git-url-parse-rs
-          releaseBranch: main
-          excludeLabels: duplicate,question,invalid,wontfix
-          base: CHANGELOG.md
-          output: CHANGELOG-generated.md
 
       - name: Print changelog
         run: cat CHANGELOG-generated.md
