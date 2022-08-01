@@ -53,12 +53,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }} 
           user: tjtelan
           project: git-url-parse-rs
-          release_branch: main
-          exclude-labels: duplicate,question,invalid,wontfix
+          releaseBranch: main
+          excludeLabels: duplicate,question,invalid,wontfix
           base: CHANGELOG.md
           output: CHANGELOG-generated.md
 
-      - name: Print chagnelog
+      - name: Print changelog
         run: cat CHANGELOG-generated.md
 
 
