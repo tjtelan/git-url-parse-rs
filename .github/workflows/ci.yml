@@ -55,9 +55,11 @@ jobs:
           project: git-url-parse-rs
           release_branch: main
           exclude-labels: duplicate,question,invalid,wontfix
-          base: CHANGELOG-generated.md
-          output:
+          base: CHANGELOG.md
+          output: CHANGELOG-generated.md
 
+      - name: Print chagnelog
+        run: cat CHANGELOG-generated.md
 
 
       #  uses: addnab/docker-run-action@v3
@@ -68,24 +70,24 @@ jobs:
       #  #    --token "${{ secrets.GITHUB_TOKEN }}"
 
 
-  update_unreleased_changelog:
-    name: Update Unreleased changelog
-    #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs:
-      - generate_changelog
-    runs-on: ubuntu-latest
-    permissions: write-all
-    steps:
-      - uses: actions/checkout@v2
-      - name: github cli login
-        run: gh auth login --with-token < <(echo ${{ secrets.GITHUB_TOKEN }})
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: changelog-preview
-      - name: Publish artifact
-        run: |
-          gh release upload -R tjtelan/git-url-parse-rs --clobber Unreleased CHANGELOG-generated.md 
+  #update_unreleased_changelog:
+  #  name: Update Unreleased changelog
+  #  #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+  #  needs:
+  #    - generate_changelog
+  #  runs-on: ubuntu-latest
+  #  permissions: write-all
+  #  steps:
+  #    - uses: actions/checkout@v2
+  #    - name: github cli login
+  #      run: gh auth login --with-token < <(echo ${{ secrets.GITHUB_TOKEN }})
+  #    - name: Download artifact
+  #      uses: actions/download-artifact@v2
+  #      with:
+  #        name: changelog-preview
+  #    - name: Publish artifact
+  #      run: |
+  #        gh release upload -R tjtelan/git-url-parse-rs --clobber Unreleased CHANGELOG-generated.md 
 
   done:
     name: Done
