@@ -52,8 +52,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }} 
 
-      - name: Print changelog
-        run: cat CHANGELOG-generated.md
+      #- name: Print changelog
+      #  run: cat CHANGELOG-generated.md
 
 
       #  uses: addnab/docker-run-action@v3
