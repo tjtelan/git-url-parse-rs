@@ -45,13 +45,14 @@ jobs:
     #permissions: read-all
     steps:
       - uses: actions/checkout@v2
-      - name: Release Changelog Builder
-        id: build_changelog
-        uses: mikepenz/release-changelog-builder-action@v3.2.0-rc04
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
-      - name: Print changelog
-        run: echo '${{ steps.build_changelog.outputs.changelog }}''
+      - name: changelog-ci
+        uses: saadmk11/changelog-ci@v1.0.0
+        id: changelog-ci
+      
+      - name: Get Changelog Output
+        run: |
+          echo "${{ steps.changelog-ci.outputs.changelog }}"
+          echo "${{ steps.changelog-ci.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
