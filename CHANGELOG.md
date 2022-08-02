@@ -11,9 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add short git URL notation support ([#28](https://github.com/tjtelan/git-url-parse-rs/issues/28))
 
-### CI
+### Changed
 
-- Generate changelog in CI ([#29](https://github.com/tjtelan/git-url-parse-rs/issues/29))
+- Update CHANGELOG from Github Actions [actions skip]
+
+### Fixed
+
+- Make changelog update fixup to PR commit ([#33](https://github.com/tjtelan/git-url-parse-rs/issues/33))
 
 ## [0.4.2](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.2) - 2022-05-30
 
