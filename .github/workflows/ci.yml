@@ -38,26 +38,67 @@ jobs:
     - uses: Swatinem/rust-cache@v1
     - name: cargo check - ${{ matrix.cargo_checks.name }} 
       run: cargo ${{ matrix.cargo_checks.subcommand }}
-
   generate_changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
-    #permissions: read-all
     steps:
-      - uses: actions/checkout@v2
-      - name: changelog-ci
-        uses: saadmk11/changelog-ci@v1.0.0
-        id: changelog-ci
-      
-      - name: Get Changelog Output
-        run: |
-          echo "${{ steps.changelog-ci.outputs.changelog }}"
-          echo "${{ steps.changelog-ci.outputs.changelog }}" >> $GITHUB_STEP_SUMMARY
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: changelog 
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v1
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG-generated.md
+      - name: Print the changelog
+        run: cat "${{ steps.git-cliff.outputs.changelog }}"
+      - name: Upload generated CHANGELOG
+        uses: actions/upload-artifact@v2
+        with:
+          name: CHANGELOG-generated 
+          path: CHANGELOG-generated.md
+          retention-days: 1
+  commit_changelog:
+    name: Commit changelog 
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    needs:
+      - ci 
+      - generate_changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Download generated CHANGELOG
+        uses: actions/download-artifact@v2
+        with:
+          name: CHANGELOG-generated
+          path: /tmp
+      - name: Copy over changelog
+        run: cp /tmp/CHANGELOG-generated.md CHANGELOG.md
+      - uses: EndBug/add-and-commit@v9
+        with:
+          add: CHANGELOG.md
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     needs: 
       - ci
+      - commit_changelog
     runs-on: ubuntu-latest
     steps:
       - name: Done
