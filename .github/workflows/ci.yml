@@ -83,6 +83,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+    - uses: nelonoel/branch-name@v1.0.1
+    # Use branch name for whatever purpose
+    - run: echo ${BRANCH_NAME}
       - name: Download generated CHANGELOG
         uses: actions/download-artifact@v2
         with:
@@ -93,6 +96,7 @@ jobs:
       - uses: EndBug/add-and-commit@v9
         with:
           add: CHANGELOG.md
+          new_branch: ${{ env.BRANCH_NAME }}
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
