@@ -1,0 +1,40 @@
+name: Post PR 
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  commit_changelog:
+    name: Commit changelog 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v1
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+      - name: Configure git credentials
+        uses: OleksiyRudenko/gha-git-credentials@v2
+        with:
+          name: Github Action
+          email: github-action@users.noreply.github.com
+          token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+      - name: Git branch name
+        id: git-branch-name
+        uses: EthanSK/git-branch-name-action@v1
+      - name: Commit CHANGELOG.md to ${{ env.GIT_BRANCH_NAME }}
+        run: |
+          git status
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --fixup $(git rev-parse HEAD) -m "Add update CHANGELOG.md from Github Actions [actions skip]"
+          git push --force-with-lease origin ${{ env.GIT_BRANCH_NAME }}
