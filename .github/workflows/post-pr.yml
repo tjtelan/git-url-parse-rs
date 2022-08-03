@@ -1,0 +1,49 @@
+name: Update Changelog 
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  commit_changelog:
+    name: Commit changelog 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v1
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+      - uses: EndBug/add-and-commit@v9
+        with:
+          name: Github Action
+          email: github-action@users.noreply.github.com
+          token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+      - name: Git branch name
+        id: git-branch-name
+        uses: EthanSK/git-branch-name-action@v1
+      - name: Commit CHANGELOG.md to ${{ env.GIT_BRANCH_NAME }}
+        run: |
+          git status
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit --fixup HEAD
+          
+          git commit --amend --message "${{ github.event.head_commit.message }}
+          
+          Add update CHANGELOG.md from Github Actions
+          [actions skip]"
+      - name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
+        uses: CasperWA/push-protected@v2
+        with:
+          token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+          branch: main 
