@@ -61,10 +61,10 @@ jobs:
       with:
         name: CHANGELOG.md
         path: .
-    - uses: actions/download-artifact@v3
-      with:
-        name: msrv-badge.svg
-        path: .github/assets
+    #- uses: actions/download-artifact@v3
+    #  with:
+    #    name: msrv-badge.svg
+    #    path: .github/assets
     - name: Configure git user 
       run: |
         git status
