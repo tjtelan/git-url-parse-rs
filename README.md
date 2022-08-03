@@ -1,5 +1,6 @@
 # git-url-parse
 
+![Minimum Supported Rust Version](https://raw.githubusercontent.com/tjtelan/git-url-parse-rs/main/.github/assets/msrv-badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/git-url-parse)](https://crates.io/crates/git-url-parse)
 ![Crates.io](https://img.shields.io/crates/d/git-url-parse)
 [![Github actions build status](https://github.com/tjtelan/git-url-parse-rs/workflows/git-url-parse/badge.svg)](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/rust.yml)
