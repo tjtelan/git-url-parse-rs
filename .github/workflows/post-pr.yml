@@ -71,17 +71,17 @@ jobs:
       run: |
         git add CHANGELOG.md
         git add .github/assets/msrv-badge.svg
-        git commit --fixup HEAD
+        git reset --soft HEAD~1
         
-        git commit --amend --message "${{ github.event.head_commit.message }}
+        git commit --message "${{ github.event.head_commit.message }}
         
         Update CHANGELOG.md from Github Actions
         Update MSRV badge from Github Actions
         [actions skip]"
         git status
         git log -5
-    #- name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
-    #  uses: CasperWA/push-protected@v2
-    #  with:
-    #    token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
-    #    branch: ${{ env.GIT_BRANCH_NAME }}
+    - name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
+      uses: CasperWA/push-protected@v2
+      with:
+        token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+        branch: ${{ env.GIT_BRANCH_NAME }}
