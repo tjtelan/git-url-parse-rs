@@ -75,6 +75,7 @@ jobs:
         git add .github/assets/msrv-badge.svg
         git reset --soft HEAD~1
         
+        # Note: github.event.head_commit.message won't have a value if job started manually
         git commit --message "${{ github.event.head_commit.message }}
         
         Update CHANGELOG.md from Github Actions
@@ -83,7 +84,7 @@ jobs:
         git status
         git log -5
     - name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
-      uses: ad-m/github-push-action@v0.6.0
+      uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
         branch: ${{ env.GIT_BRANCH_NAME }}
