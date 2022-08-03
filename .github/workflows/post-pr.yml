@@ -42,7 +42,7 @@ jobs:
       with:
         name: msrv-badge.svg 
         path: msrv-badge.svg 
-  commit_fixup:
+  squash_to_previous_commit:
     name: Add generated files to PR commit
     runs-on: ubuntu-latest
     needs:
@@ -51,6 +51,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Git branch name
       id: git-branch-name
       uses: EthanSK/git-branch-name-action@v1
