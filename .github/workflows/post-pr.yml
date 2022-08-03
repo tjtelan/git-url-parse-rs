@@ -1,4 +1,4 @@
-name: Update Changelog 
+name: Post PR 
 
 on:
   push:
@@ -79,9 +79,9 @@ jobs:
         Update MSRV badge from Github Actions
         [actions skip]"
         git status
-        git log -1
-    - name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
-      uses: CasperWA/push-protected@v2
-      with:
-        token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
-        branch: ${{ env.GIT_BRANCH_NAME }}
+        git log -5
+    #- name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
+    #  uses: CasperWA/push-protected@v2
+    #  with:
+    #    token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+    #    branch: ${{ env.GIT_BRANCH_NAME }}
