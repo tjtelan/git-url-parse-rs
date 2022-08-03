@@ -71,15 +71,12 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
     - name: Add updates and rewrite commit message to branch ${{ env.GIT_BRANCH_NAME }}
       run: |
-        git add CHANGELOG.md
-        git add .github/assets/msrv-badge.svg
         git reset --soft HEAD~1
         
         # Note: github.event.head_commit.message won't have a value if job started manually
-        git commit --message "${{ github.event.head_commit.message }}
+        git commit --all --message "${{ github.event.head_commit.message }}
         
-        Update CHANGELOG.md from Github Actions
-        Update MSRV badge from Github Actions
+        Update CHANGELOG.md and/or MSRV badge from Github Actions
         [actions skip]"
         git status
         git log -5
