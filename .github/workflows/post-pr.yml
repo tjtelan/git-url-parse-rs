@@ -6,44 +6,81 @@ on:
   workflow_dispatch:
 
 jobs:
-  commit_changelog:
-    name: Commit changelog 
+  generate_changelog:
+    name: Generate changelog
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Generate a changelog
-        uses: orhun/git-cliff-action@v1
-        id: git-cliff
-        with:
-          config: cliff.toml
-          args: --verbose
-        env:
-          OUTPUT: CHANGELOG.md
-      - uses: EndBug/add-and-commit@v9
-        with:
-          name: Github Action
-          email: github-action@users.noreply.github.com
-          token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
-      - name: Git branch name
-        id: git-branch-name
-        uses: EthanSK/git-branch-name-action@v1
-      - name: Commit CHANGELOG.md to ${{ env.GIT_BRANCH_NAME }}
-        run: |
-          git status
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git commit --fixup HEAD
-          
-          git commit --amend --message "${{ github.event.head_commit.message }}
-          
-          Add update CHANGELOG.md from Github Actions
-          [actions skip]"
-      - name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
-        uses: CasperWA/push-protected@v2
-        with:
-          token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
-          branch: main 
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Generate a changelog
+      uses: orhun/git-cliff-action@v1
+      id: git-cliff
+      with:
+        config: cliff.toml
+        args: --verbose
+      env:
+        OUTPUT: CHANGELOG.md
+    - uses: actions/upload-artifact@v3
+      with:
+        name: CHANGELOG.md
+        path: CHANGELOG.md 
+  generate_msrv:
+    name: Generate Minimum Supported Rust Version badge 
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Get Minimum Supported Rust Version
+      uses: spenserblack/actions-msrv@v0.2
+      id: get-msrv
+      timeout-minutes: 60
+    - name: Create Badge
+      run: curl https://img.shields.io/badge/rustc-${{ steps.get-msrv.outputs.msrv }}%2B-blue?logo=rust -o msrv-badge.svg
+    - uses: actions/upload-artifact@v3
+      with:
+        name: msrv-badge.svg 
+        path: msrv-badge.svg 
+  commit_fixup:
+    name: Add generated files to PR commit
+    runs-on: ubuntu-latest
+    needs:
+      - generate_changelog
+      - generate_msrv
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Git branch name
+      id: git-branch-name
+      uses: EthanSK/git-branch-name-action@v1
+    - uses: actions/download-artifact@v3
+      with:
+        name: CHANGELOG.md
+        path: .
+    - uses: actions/download-artifact@v3
+      with:
+        name: msrv-badge.svg
+        path: .github/assets
+    - name: Configure git user 
+      run: |
+        git status
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+    - name: Add updates and rewrite commit message to branch ${{ env.GIT_BRANCH_NAME }}
+      run: |
+        git add CHANGELOG.md
+        git add .github/assets/msrv-badge.svg
+        git commit --fixup HEAD
+        
+        git commit --amend --message "${{ github.event.head_commit.message }}
+        
+        Update CHANGELOG.md from Github Actions
+        Update MSRV badge from Github Actions
+        [actions skip]"
+        git status
+    #- name: Pushing to the protected branch ${{ env.GIT_BRANCH_NAME }}
+    #  uses: CasperWA/push-protected@v2
+    #  with:
+    #    token: ${{ secrets.CHANGELOG_UPDATE_PAT }}
+    #    branch: ${{ env.GIT_BRANCH_NAME }}
