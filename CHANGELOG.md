@@ -10,14 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add short git URL notation support ([#28](https://github.com/tjtelan/git-url-parse-rs/issues/28))
-
-### Changed
-
-- Update CHANGELOG from Github Actions [actions skip]
+- Add MSRV badge ([#36](https://github.com/tjtelan/git-url-parse-rs/issues/36))
+- Add personal access token to checkout ([#41](https://github.com/tjtelan/git-url-parse-rs/issues/41))
 
 ### Fixed
 
+- Update CHANGELOG from Github Actions
 - Make changelog update fixup to PR commit ([#33](https://github.com/tjtelan/git-url-parse-rs/issues/33))
+- Fix post pr workflow ([#37](https://github.com/tjtelan/git-url-parse-rs/issues/37))
+- Post PR: Include all PR files with changelog commit with `--all` ([#38](https://github.com/tjtelan/git-url-parse-rs/issues/38))
+
+### Other
+
+- Troubleshoot CI commit fail ([#39](https://github.com/tjtelan/git-url-parse-rs/issues/39))
+- Troubleshoot Post PR ([#40](https://github.com/tjtelan/git-url-parse-rs/issues/40))
 
 ## [0.4.2](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.2) - 2022-05-30
 
