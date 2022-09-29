@@ -199,6 +199,7 @@ jobs:
 
   generate_msrv:
     name: Generate Minimum Supported Rust Version badge
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
