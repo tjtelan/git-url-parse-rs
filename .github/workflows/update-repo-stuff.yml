@@ -275,7 +275,7 @@ jobs:
         id: auto-commit-action
         uses: stefanzweifel/git-auto-commit-action@v4.14.1
         with:
-          commit_message: "Updating ${{ env.CHANGELOG_FILENAME }} [actions skip]"
+          commit_message: "Updating ${{ env.CHANGELOG_FILENAME }} and/or MSRV badge [actions skip]"
           commit_user_name: ${{ env.GIT_BOT_USERNAME }}
           commit_user_email: ${{ env.GIT_BOT_EMAIL }}
           commit_author: ${{ env.GIT_BOT_USERNAME }} <${{ env.GIT_BOT_EMAIL }}>
@@ -286,6 +286,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
         run: |
+
+          printf "Changelog and/or MSRV badge was updated.\n\nBors will cancel job, but no action is required. Job will be restarted." | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
           sleep ${{ env.RESTART_PR_DELAY }}
           gh pr edit ${{ needs.get_pr_info.outputs.pr_number }} --add-label ${{ env.ADD_PR_LABELS }}
           printf "Updated changelog before staging build.\nbors r+" | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
