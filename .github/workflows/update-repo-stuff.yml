@@ -1,4 +1,4 @@
-name: Generate CHANGELOG.md
+name: Update Repo stuff
 
 on:
   workflow_call:
