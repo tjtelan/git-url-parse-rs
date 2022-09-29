@@ -169,8 +169,15 @@ jobs:
       - name: Simulate PR merge for changelog updates
         run: |
           git checkout ${{ env.DEFAULT_BRANCH }}
-          #git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }} (#${{ needs.get_pr_info.outputs.pr_number }})"
-          git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }}"
+
+          if [[ ${{ github.event_name == 'pull_request' }}  = 'true' ]]; then
+            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }} (#${{ needs.get_pr_info.outputs.pr_number }})"
+          fi
+
+          if [[ ${{ github.event_name == 'push' }}  = 'true' ]]; then
+            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }}"
+          fi
+
           git log -5
 
       - name: Generate a changelog
@@ -214,6 +221,7 @@ jobs:
     needs:
       - get_pr_info
       - generate_changelog
+      - generate_msrv
     permissions:
       contents: write
       pull-requests: write
