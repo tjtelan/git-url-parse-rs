@@ -261,7 +261,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: msrv-badge.svg
-          path: .
+          path: .github/assets/msrv-badge.svg
 
       #- name: Check repo
       #  run: |
