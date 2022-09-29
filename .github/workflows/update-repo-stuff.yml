@@ -197,6 +197,9 @@ jobs:
           path: ${{ env.CHANGELOG_FILENAME }}
           retention-days: 1
 
+  # In the future, we should find a way to skip this step for the final build
+  # after msrv and changelog have been updated
+  # possibly using labels on PR
   generate_msrv:
     name: Generate Minimum Supported Rust Version badge
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
@@ -261,7 +264,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: msrv-badge.svg
-          path: .github/assets/msrv-badge.svg
+          path: .github/assets
 
       #- name: Check repo
       #  run: |
