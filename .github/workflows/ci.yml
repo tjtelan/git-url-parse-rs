@@ -104,7 +104,7 @@ jobs:
   #        default_author: github_actions
   #        message: "[skip ci] Update CHANGELOG from Github Actions"
 
-  update_project_stuff:
+  update-project-stuff:
     uses: ./.github/workflows/update-repo-stuff.yml
     secrets: inherit
 
@@ -113,7 +113,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     needs:
       - ci
-      #- commit_changelog
+      - update-project-stuff
     runs-on: ubuntu-latest
     steps:
       - name: Done
