@@ -6,7 +6,7 @@ on:
 env:
   CHANGELOG_FILENAME: CHANGELOG.md
   DEFAULT_BRANCH: main
-  ADD_PR_LABELS: bot
+  ADD_PR_LABELS: bot-updated
   RESTART_PR_DELAY: 15s
   GIT_BOT_USERNAME: github-actions[bot]
   GIT_BOT_EMAIL: github-actions[bot]@users.noreply.github.com
@@ -280,6 +280,7 @@ jobs:
           commit_user_email: ${{ env.GIT_BOT_EMAIL }}
           commit_author: ${{ env.GIT_BOT_USERNAME }} <${{ env.GIT_BOT_EMAIL }}>
 
+      # Make sure labels are created first
       - name: Wait, then restart Bors and label PR
         if: ${{ steps.auto-commit-action.outputs.changes_detected == 'true' }}
         env:
