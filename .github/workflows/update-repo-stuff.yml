@@ -190,7 +190,24 @@ jobs:
           path: ${{ env.CHANGELOG_FILENAME }}
           retention-days: 1
 
-  commit_changelog:
+  generate_msrv:
+    name: Generate Minimum Supported Rust Version badge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Get Minimum Supported Rust Version
+        uses: spenserblack/actions-msrv@v0.2
+        id: get-msrv
+        timeout-minutes: 60
+      - name: Create Badge
+        run: curl https://img.shields.io/badge/rustc-${{ steps.get-msrv.outputs.msrv }}%2B-blue?logo=rust -o msrv-badge.svg
+      - uses: actions/upload-artifact@v3
+        with:
+          name: msrv-badge.svg
+          path: msrv-badge.svg
+
+  commit_updates:
     name: Commit updates
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
@@ -229,6 +246,12 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ env.CHANGELOG_FILENAME }}
+          path: .
+
+      - name: Download ${{ env.CHANGELOG_FILENAME }}
+        uses: actions/download-artifact@v2
+        with:
+          name: msrv-badge.svg
           path: .
 
       #- name: Check repo
