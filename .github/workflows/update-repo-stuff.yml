@@ -260,7 +260,7 @@ jobs:
           name: ${{ env.CHANGELOG_FILENAME }}
           path: .
 
-      - name: Download ${{ env.CHANGELOG_FILENAME }}
+      - name: Download msrv-badge.svg
         uses: actions/download-artifact@v2
         with:
           name: msrv-badge.svg
