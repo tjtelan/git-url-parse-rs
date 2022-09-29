@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add short git URL notation support ([#28](https://github.com/tjtelan/git-url-parse-rs/issues/28))
 - Add MSRV badge ([#36](https://github.com/tjtelan/git-url-parse-rs/issues/36))
 - Add personal access token to checkout ([#41](https://github.com/tjtelan/git-url-parse-rs/issues/41))
+- Add pre-merge generated updates ([#42](https://github.com/tjtelan/git-url-parse-rs/issues/42))
 
 ### Fixed
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make changelog update fixup to PR commit ([#33](https://github.com/tjtelan/git-url-parse-rs/issues/33))
 - Fix post pr workflow ([#37](https://github.com/tjtelan/git-url-parse-rs/issues/37))
 - Post PR: Include all PR files with changelog commit with `--all` ([#38](https://github.com/tjtelan/git-url-parse-rs/issues/38))
+- Add dependency for update job completion before Bors merges ([#43](https://github.com/tjtelan/git-url-parse-rs/issues/43))
 
 ### Other
 
