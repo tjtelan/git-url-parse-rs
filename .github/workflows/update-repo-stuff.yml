@@ -220,7 +220,7 @@ jobs:
   # possibly using labels on PR
   generate_msrv:
     name: Generate Minimum Supported Rust Version badge
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -250,7 +250,7 @@ jobs:
 
   commit_updates:
     name: Commit updates
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     needs:
       - get_pr_info
