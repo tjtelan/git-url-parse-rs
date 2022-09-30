@@ -1,4 +1,4 @@
-name: "Lint PR"
+name: "Triage PR"
 
 on:
   pull_request_target:
@@ -8,7 +8,7 @@ on:
       - synchronize
 
 jobs:
-  main:
+  validate_pr_title:
     name: Validate PR title
     runs-on: ubuntu-latest
     steps:
@@ -19,3 +19,14 @@ jobs:
           ignoreLabels: |
             bot-updated
             ignore-semantic-pull-request
+  label_pr:
+    name: Label Pull Request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v4
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          sync-labels: true

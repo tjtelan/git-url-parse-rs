@@ -7,7 +7,7 @@ env:
   CHANGELOG_FILENAME: CHANGELOG.md
   DEFAULT_BRANCH: main
   ADD_PR_LABELS: bot-updated
-  RESTART_PR_DELAY: 15s
+  RESTART_PR_DELAY: 30s
   GIT_BOT_USERNAME: github-actions[bot]
   GIT_BOT_EMAIL: github-actions[bot]@users.noreply.github.com
 
@@ -45,7 +45,7 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          NUMBER=$( echo '${{ github.event.head_commit.message }}' | tr -cd [:digit:] )
+          NUMBER=$( echo '${{ github.event.head_commit.message }}' | head -1 | tr -cd [:digit:] )
 
           echo "PR number is: $NUMBER"
           echo "::set-output name=number::$NUMBER"
@@ -148,28 +148,28 @@ jobs:
           echo "::set-output name=title::$PR_TITLE"
           echo "pr title is: $PR_TITLE"
 
-  bot-label-check:
-    name: Check if we've already done the hard work
-    runs-on: ubuntu-latest
-    needs: get_pr_info
-    outputs:
-      label-exists: ${{ steps.label-check.outputs.result }}
-    steps:
-      - name: Check if already labeled before running
-        id: label-check
-        uses: paul1k/check-pr-labels@v1.0.0
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          pull-number: ${{ fromJSON(needs.get_pr_info.outputs.pr_number) }}
-          labels: '["bot-updated"]'
+  # This isn't working as expected
+  #bot-label-check:
+  #  name: Check if we've already done the hard work
+  #  runs-on: ubuntu-latest
+  #  needs: get_pr_info
+  #  outputs:
+  #    label-exists: ${{ steps.label-check.outputs.result }}
+  #  steps:
+  #    - name: Check if already labeled before running
+  #      id: label-check
+  #      uses: paul1k/check-pr-labels@v1.0.0
+  #      with:
+  #        github-token: ${{ secrets.GITHUB_TOKEN }}
+  #        pull-number: ${{ fromJSON(needs.get_pr_info.outputs.pr_number) }}
+  #        labels: '["bot-updated"]'
 
   generate_changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
     needs:
-      - bot-label-check
+      #- bot-label-check
       - get_pr_info
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -221,8 +221,7 @@ jobs:
   generate_msrv:
     name: Generate Minimum Supported Rust Version badge
     #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs: bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
+    #needs: bot-label-check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -237,13 +236,11 @@ jobs:
       - name: Install cargo-msrv
         run: cargo install cargo-msrv
 
-      # I took this from entrypoint.sh
-      # from spenserblack/actions-msrv@v0.2
       - name: Get Minimum Supported Rust Version
         id: get-msrv
-        timeout-minutes: 60
+        timeout-minutes: 10
         run: |
-          MSRV_RESULT=$(cargo msrv --path $1 --output-format json | tail -1)
+          MSRV_RESULT=$(cargo msrv --output-format json | tail -1)
           MSRV=$(echo $MSRV_RESULT | jq -r '.msrv')
           echo "::set-output name=msrv::$MSRV"
 
@@ -262,8 +259,7 @@ jobs:
       - get_pr_info
       - generate_changelog
       - generate_msrv
-      - bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
+      #- bot-label-check
     permissions:
       contents: write
       pull-requests: write
@@ -326,7 +322,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
         run: |
-
           printf "Changelog and/or MSRV badge was updated.\n\nBors will cancel job, but no action is required. Job will be restarted." | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
           sleep ${{ env.RESTART_PR_DELAY }}
           gh pr edit ${{ needs.get_pr_info.outputs.pr_number }} --add-label ${{ env.ADD_PR_LABELS }}

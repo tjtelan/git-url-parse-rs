@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Troubleshoot CI commit fail ([#39](https://github.com/tjtelan/git-url-parse-rs/issues/39))
 - Troubleshoot Post PR ([#40](https://github.com/tjtelan/git-url-parse-rs/issues/40))
+- Labels and MSRV tuning ([#47](https://github.com/tjtelan/git-url-parse-rs/issues/47))
 
 ## [0.4.2](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.2) - 2022-05-30
 

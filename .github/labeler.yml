@@ -1,0 +1,5 @@
+changelog-updated:
+  - CHANGELOG.md
+
+msrv-updated:
+  - .github/assets/msrv-badge.svg
