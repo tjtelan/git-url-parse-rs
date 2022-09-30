@@ -332,6 +332,7 @@ fn normalize_ssh_url(url: &str) -> Result<Url> {
 /// `normalize_file_path` takes in a filepath and uses `Url::from_file_path()` to parse
 ///
 /// Prepends `file://` to url
+#[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
 fn normalize_file_path(filepath: &str) -> Result<Url> {
     let fp = Url::from_file_path(filepath);
 
@@ -340,6 +341,11 @@ fn normalize_file_path(filepath: &str) -> Result<Url> {
         Err(_e) => Ok(normalize_url(&format!("file://{}", filepath))
             .with_context(|| "file:// normalization failed".to_string())?),
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn normalize_file_path(_filepath: &str) -> Result<Url> {
+    unreachable!()
 }
 
 /// `normalize_url` takes in url as `&str` and takes an opinionated approach to identify
