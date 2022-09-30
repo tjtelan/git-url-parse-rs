@@ -233,8 +233,9 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-          components: cargo-msrv
       - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv
 
       # I took this from entrypoint.sh
       # from spenserblack/actions-msrv@v0.2
