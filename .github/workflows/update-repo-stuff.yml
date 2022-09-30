@@ -14,8 +14,6 @@ env:
 jobs:
   get_pr_number_pr_event:
     name: Get the PR number from PR event
-    needs: bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists != 'success' }}
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
