@@ -160,7 +160,7 @@ jobs:
         uses: paul1k/check-pr-labels@v1.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          pull-number: ${{ needs.get_pr_info.outputs.pr_number }}
+          pull-number: ${{ fromJSON(needs.get_pr_info.outputs.pr_number) }}
           labels: '["bot-updated"]'
 
   generate_changelog:
