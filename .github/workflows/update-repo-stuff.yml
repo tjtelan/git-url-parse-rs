@@ -162,7 +162,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-number: ${{ fromJSON(needs.get_pr_info.outputs.pr_number) }}
           labels:
-            - bot-updated
+            - "bot-updated"
 
   generate_changelog:
     name: Generate changelog
