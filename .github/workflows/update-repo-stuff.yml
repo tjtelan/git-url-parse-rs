@@ -161,7 +161,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-number: ${{ fromJSON(needs.get_pr_info.outputs.pr_number) }}
-          labels: '[\"bot-updated\"]'
+          labels: '["bot-updated"]'
 
   generate_changelog:
     name: Generate changelog
@@ -169,7 +169,7 @@ jobs:
     needs:
       - bot-label-check
       - get_pr_info
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
+    if: ${{ ! needs.bot-label-check.outputs.label-exists }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -222,7 +222,7 @@ jobs:
     name: Generate Minimum Supported Rust Version badge
     #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     needs: bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
+    if: ${{ ! needs.bot-label-check.outputs.label-exists }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -261,7 +261,7 @@ jobs:
       - generate_changelog
       - generate_msrv
       - bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists }}
+    if: ${{ ! needs.bot-label-check.outputs.label-exists }}
     permissions:
       contents: write
       pull-requests: write
