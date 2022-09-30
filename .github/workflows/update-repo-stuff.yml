@@ -12,20 +12,6 @@ env:
   GIT_BOT_EMAIL: github-actions[bot]@users.noreply.github.com
 
 jobs:
-  bot-label-check:
-    name: Check if we've already done the hard work
-    runs-on: ubuntu-latest
-    outputs:
-      label-exists: ${{ steps.label-check.outputs.label_check }}
-    steps:
-      - name: Check if already labeled before running
-        id: label-check
-        uses: agilepathway/label-checker@v1.2.6
-        with:
-          one_of: ${{ env.ADD_PR_LABELS }}
-          allow_failure: true
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-
   get_pr_number_pr_event:
     name: Get the PR number from PR event
     needs: bot-label-check
@@ -47,8 +33,6 @@ jobs:
 
   get_pr_number_push_event:
     name: Get the PR number from Push event
-    needs: bot-label-check
-    if: ${{ needs.bot-label-check.outputs.label-exists != 'success' }}
     runs-on: ubuntu-latest
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
@@ -166,10 +150,26 @@ jobs:
           echo "::set-output name=title::$PR_TITLE"
           echo "pr title is: $PR_TITLE"
 
+  bot-label-check:
+    name: Check if we've already done the hard work
+    runs-on: ubuntu-latest
+    needs: get_pr_info
+    outputs:
+      label-exists: ${{ steps.label-check.outputs.result }}
+    steps:
+      - name: Check if already labeled before running
+        id: label-check
+        uses: paul1k/check-pr-labels@v1.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pull-number: ${{ needs.get_pr_number.outputs.pr_number }}
+          labels: ["bot-updated"]
+
   generate_changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
-    needs: get_pr_info
+    needs: bot-label-check
+    if: ${{ needs.bot-label-check.outputs.label-exists != 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -221,7 +221,8 @@ jobs:
   generate_msrv:
     name: Generate Minimum Supported Rust Version badge
     #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs: get_pr_info
+    needs: bot-label-check
+    if: ${{ needs.bot-label-check.outputs.label-exists != 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -257,6 +258,8 @@ jobs:
       - get_pr_info
       - generate_changelog
       - generate_msrv
+      - bot-label-check
+    if: ${{ needs.bot-label-check.outputs.label-exists != 'success' }}
     permissions:
       contents: write
       pull-requests: write
