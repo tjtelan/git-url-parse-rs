@@ -7,7 +7,7 @@ env:
   CHANGELOG_FILENAME: CHANGELOG.md
   DEFAULT_BRANCH: main
   ADD_PR_LABELS: bot-updated
-  RESTART_PR_DELAY: 15s
+  RESTART_PR_DELAY: 30s
   GIT_BOT_USERNAME: github-actions[bot]
   GIT_BOT_EMAIL: github-actions[bot]@users.noreply.github.com
 
@@ -237,13 +237,11 @@ jobs:
       - name: Install cargo-msrv
         run: cargo install cargo-msrv
 
-      # I took this from entrypoint.sh
-      # from spenserblack/actions-msrv@v0.2
       - name: Get Minimum Supported Rust Version
         id: get-msrv
-        timeout-minutes: 60
+        timeout-minutes: 10
         run: |
-          MSRV_RESULT=$(cargo msrv --path $1 --output-format json | tail -1)
+          MSRV_RESULT=$(cargo msrv --output-format json | tail -1)
           MSRV=$(echo $MSRV_RESULT | jq -r '.msrv')
           echo "::set-output name=msrv::$MSRV"
 
@@ -326,7 +324,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app.outputs.token }}
         run: |
-
           printf "Changelog and/or MSRV badge was updated.\n\nBors will cancel job, but no action is required. Job will be restarted." | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
           sleep ${{ env.RESTART_PR_DELAY }}
           gh pr edit ${{ needs.get_pr_info.outputs.pr_number }} --add-label ${{ env.ADD_PR_LABELS }}
