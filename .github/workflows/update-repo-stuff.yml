@@ -157,7 +157,6 @@ jobs:
         id: label-check
         uses: agilepathway/label-checker@v1.2.6
         with:
-        if: ${{ steps.label-check.outputs.label_check != 'success' }}
           one_of: ${{ env.ADD_PR_LABELS }}
           allow_failure: true
           repo_token: ${{ secrets.GITHUB_TOKEN }}
