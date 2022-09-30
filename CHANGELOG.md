@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix post pr workflow ([#37](https://github.com/tjtelan/git-url-parse-rs/issues/37))
 - Post PR: Include all PR files with changelog commit with `--all` ([#38](https://github.com/tjtelan/git-url-parse-rs/issues/38))
 - Add dependency for update job completion before Bors merges ([#43](https://github.com/tjtelan/git-url-parse-rs/issues/43))
+- Fix post merge lint ([#45](https://github.com/tjtelan/git-url-parse-rs/issues/45))
 
 ### Other
 

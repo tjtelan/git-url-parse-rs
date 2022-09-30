@@ -17,5 +17,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           ignoreLabels: |
-            bot
+            bot-updated
             ignore-semantic-pull-request

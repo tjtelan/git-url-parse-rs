@@ -105,6 +105,7 @@ jobs:
   #        message: "[skip ci] Update CHANGELOG from Github Actions"
 
   update-project-stuff:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     uses: ./.github/workflows/update-repo-stuff.yml
     secrets: inherit
 
