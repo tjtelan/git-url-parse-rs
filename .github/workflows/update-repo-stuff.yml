@@ -228,10 +228,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: actions-rs/install@v0.1
+      - name: rust-toolchain
+        uses: actions-rs/toolchain@v1.0.6
         with:
-          crate: cargo-msrv
-          version: latest
+          profile: minimal
+          toolchain: stable
+          components: cargo-msrv
+      - uses: Swatinem/rust-cache@v2
 
       # I took this from entrypoint.sh
       # from spenserblack/actions-msrv@v0.2
