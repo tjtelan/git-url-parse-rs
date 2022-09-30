@@ -163,7 +163,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           pull-number: ${{ needs.get_pr_number.outputs.pr_number }}
-          labels: ["bot-updated"]
+          labels: '["bot-updated"]'
 
   generate_changelog:
     name: Generate changelog
