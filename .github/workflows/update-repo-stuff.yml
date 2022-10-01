@@ -326,3 +326,7 @@ jobs:
           sleep ${{ env.RESTART_PR_DELAY }}
           gh pr edit ${{ needs.get_pr_info.outputs.pr_number }} --add-label ${{ env.ADD_PR_LABELS }}
           printf "Updated changelog before staging build.\nbors r+" | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
+
+      # I don't want to accidentally merge while I'm testing
+      - name: Fail test intentionally
+        run: exit 1
