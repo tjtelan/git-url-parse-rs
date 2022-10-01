@@ -59,8 +59,8 @@ jobs:
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
     steps:
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Print PR number
         id: pr
@@ -109,8 +109,8 @@ jobs:
         id: info
         uses: Brymastr/pr-info-action@v1
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Set outputs from pull request event
         if: github.event_name == 'pull_request'
@@ -181,8 +181,8 @@ jobs:
           git config user.name "${{ env.GIT_BOT_USERNAME }}"
           git config user.email "${{ env.GIT_BOT_EMAIL }}"
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Simulate PR merge for changelog updates
         run: |
@@ -277,8 +277,8 @@ jobs:
           token: ${{ steps.app.outputs.token }}
           fetch-depth: 0
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Checkout PR branch
         env:
