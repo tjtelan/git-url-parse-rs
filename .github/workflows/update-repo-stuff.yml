@@ -45,10 +45,14 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
+          echo toJSON(${{ github.event.head_commit.message }})
+
+
           NUMBER=$( echo '${{ github.event.head_commit.message }}' | head -1 | tr -cd [:digit:] )
 
           echo "PR number is: $NUMBER"
           echo "::set-output name=number::$NUMBER"
+          exit 1
 
   get_pr_number:
     name: Get PR number from event
