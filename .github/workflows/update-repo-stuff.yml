@@ -45,12 +45,11 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          echo '${{ toJSON(github.event.head_commit) }}' | jq '.message' > /tmp/commit_msg
+          echo git log --format=%B -n 1 $GITHUB_SHA | head -1 > /tmp/commit_msg
 
-          echo "Printing output from jq"
           cat /tmp/commit_msg
 
-          #NUMBER=$( echo '${{ github.event.head_commit.message }}' | head -1 | tr -cd [:digit:] )
+          NUMBER=$( cat /tmp/commit_msg | head -1 | tr -cd [:digit:] )
 
           echo "PR number is: $NUMBER"
           echo "::set-output name=number::$NUMBER"
