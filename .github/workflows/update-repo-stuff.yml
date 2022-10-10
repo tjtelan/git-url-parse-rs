@@ -45,7 +45,8 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          echo git log --format=%B -n 1 $GITHUB_SHA | head -1 > /tmp/commit_msg
+          git log --format=%B -n 1 $GITHUB_SHA
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 | tee /tmp/commit_msg
 
           cat /tmp/commit_msg
 
