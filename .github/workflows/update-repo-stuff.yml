@@ -45,16 +45,12 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          git log --format=%B -n 1 $GITHUB_SHA
           git log --format=%B -n 1 $GITHUB_SHA | head -1 | tee /tmp/commit_msg
-
-          cat /tmp/commit_msg
+          echo PR title: $(cat /tmp/commit_msg)
 
           NUMBER=$( cat /tmp/commit_msg | head -1 | tr -cd [:digit:] )
-
           echo "PR number is: $NUMBER"
           echo "::set-output name=number::$NUMBER"
-          exit 1
 
   get_pr_number:
     name: Get PR number from event
