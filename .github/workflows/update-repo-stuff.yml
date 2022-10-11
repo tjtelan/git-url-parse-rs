@@ -125,13 +125,14 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "PR_BRANCH='$(git rev-parse --abbrev-ref HEAD)'" >> $GITHUB_ENV
-          echo "PR_BRANCH='$(git rev-parse --abbrev-ref HEAD)'"
+          echo "PR_BRANCH=$(git rev-parse --abbrev-ref HEAD)"
           echo "PR_NUMBER='${{ needs.get_pr_number.outputs.pr_number }}'" >> $GITHUB_ENV
           echo "PR_NUMBER='${{ needs.get_pr_number.outputs.pr_number }}'"
 
+          # Might need to b64 encode titles, so they can avoid exec from print later on
           # The commit message can be multiple lines, but we only want the first one
-          echo '${{ github.event.head_commit.message }}' > /tmp/pr-title-tmp
-          cat /tmp/pr-title-tmp | head -1 > /tmp/pr-title
+
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 | base64 | tee /tmp/pr-title-tmp
           echo PR_TITLE="$(cat /tmp/pr-title)" >> $GITHUB_ENV
           echo PR_TITLE="$(cat /tmp/pr-title)"
 
@@ -147,8 +148,8 @@ jobs:
           echo "::set-output name=number::$PR_NUMBER"
           echo "pr number is: $PR_NUMBER"
 
-          echo "::set-output name=title::$PR_TITLE"
-          echo "pr title is: $PR_TITLE"
+          #echo "::set-output name=title::$PR_TITLE"
+          #echo "pr title is: $PR_TITLE"
 
   # This isn't working as expected
   #bot-label-check:
@@ -190,14 +191,10 @@ jobs:
         run: |
           git checkout ${{ env.DEFAULT_BRANCH }}
 
-          if [[ ${{ github.event_name == 'pull_request' }}  = 'true' ]]; then
-            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }} (#${{ needs.get_pr_info.outputs.pr_number }})"
-          fi
+          # Write commit into file, so we don't have to
+          echo ${{ needs.get_pr_info.outputs.pr_title }} | base64 -d > /tmp/commit_title
 
-          if [[ ${{ github.event_name == 'push' }}  = 'true' ]]; then
-            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }}"
-          fi
-
+          git commit --all --allow-empty -F /tmp/commit_title
           git log -5
 
       - name: Generate a changelog
