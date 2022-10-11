@@ -148,8 +148,8 @@ jobs:
           echo "::set-output name=number::$PR_NUMBER"
           echo "pr number is: $PR_NUMBER"
 
-          #echo "::set-output name=title::$PR_TITLE"
-          #echo "pr title is: $PR_TITLE"
+          echo "::set-output name=title::$PR_TITLE"
+          echo "pr title is: $PR_TITLE"
 
   # This isn't working as expected
   #bot-label-check:
