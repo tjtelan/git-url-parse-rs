@@ -9,7 +9,7 @@ license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
 repository = "https://github.com/tjtelan/git-url-parse-rs"
-version = "0.4.2"
+version = "0.4.3"
 
 [dependencies]
 tracing = "0.1"
