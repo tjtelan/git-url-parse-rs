@@ -45,8 +45,7 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          git log --format=%B -n 1 $GITHUB_SHA | head -1 | tee /tmp/commit_msg
-          echo PR title: $(cat /tmp/commit_msg)
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 > /tmp/commit_msg
 
           NUMBER=$( cat /tmp/commit_msg | head -1 | tr -cd [:digit:] )
           echo "PR number is: $NUMBER"
@@ -132,7 +131,7 @@ jobs:
           # Might need to b64 encode titles, so they can avoid exec from print later on
           # The commit message can be multiple lines, but we only want the first one
 
-          git log --format=%B -n 1 $GITHUB_SHA | head -1 | base64 | tee /tmp/pr-title
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 | base64 > /tmp/pr-title
           echo PR_TITLE="$(cat /tmp/pr-title)" >> $GITHUB_ENV
           echo PR_TITLE="$(cat /tmp/pr-title)"
 
@@ -149,7 +148,7 @@ jobs:
           echo "pr number is: $PR_NUMBER"
 
           echo "::set-output name=title::$PR_TITLE"
-          echo "pr title is: $PR_TITLE"
+          echo "b64 encoded pr title is: $PR_TITLE"
 
   # This isn't working as expected
   #bot-label-check:
@@ -325,7 +324,3 @@ jobs:
           sleep ${{ env.RESTART_PR_DELAY }}
           gh pr edit ${{ needs.get_pr_info.outputs.pr_number }} --add-label ${{ env.ADD_PR_LABELS }}
           printf "Updated changelog before staging build.\nbors r+" | gh pr comment ${{ needs.get_pr_info.outputs.pr_number }} --body-file -
-
-      # I don't want to accidentally merge while I'm testing
-      - name: Fail test intentionally
-        run: exit 1
