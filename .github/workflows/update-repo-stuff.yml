@@ -45,8 +45,9 @@ jobs:
         id: pr
         if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
         run: |
-          NUMBER=$( echo '${{ github.event.head_commit.message }}' | head -1 | tr -cd [:digit:] )
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 > /tmp/commit_msg
 
+          NUMBER=$( cat /tmp/commit_msg | head -1 | tr -cd [:digit:] )
           echo "PR number is: $NUMBER"
           echo "::set-output name=number::$NUMBER"
 
@@ -59,8 +60,8 @@ jobs:
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
     steps:
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Print PR number
         id: pr
@@ -109,8 +110,8 @@ jobs:
         id: info
         uses: Brymastr/pr-info-action@v1
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Set outputs from pull request event
         if: github.event_name == 'pull_request'
@@ -123,13 +124,14 @@ jobs:
         if: github.event_name == 'push'
         run: |
           echo "PR_BRANCH='$(git rev-parse --abbrev-ref HEAD)'" >> $GITHUB_ENV
-          echo "PR_BRANCH='$(git rev-parse --abbrev-ref HEAD)'"
+          echo "PR_BRANCH=$(git rev-parse --abbrev-ref HEAD)"
           echo "PR_NUMBER='${{ needs.get_pr_number.outputs.pr_number }}'" >> $GITHUB_ENV
           echo "PR_NUMBER='${{ needs.get_pr_number.outputs.pr_number }}'"
 
+          # Might need to b64 encode titles, so they can avoid exec from print later on
           # The commit message can be multiple lines, but we only want the first one
-          echo '${{ github.event.head_commit.message }}' > /tmp/pr-title-tmp
-          cat /tmp/pr-title-tmp | head -1 > /tmp/pr-title
+
+          git log --format=%B -n 1 $GITHUB_SHA | head -1 | base64 > /tmp/pr-title
           echo PR_TITLE="$(cat /tmp/pr-title)" >> $GITHUB_ENV
           echo PR_TITLE="$(cat /tmp/pr-title)"
 
@@ -146,7 +148,7 @@ jobs:
           echo "pr number is: $PR_NUMBER"
 
           echo "::set-output name=title::$PR_TITLE"
-          echo "pr title is: $PR_TITLE"
+          echo "b64 encoded pr title is: $PR_TITLE"
 
   # This isn't working as expected
   #bot-label-check:
@@ -181,21 +183,17 @@ jobs:
           git config user.name "${{ env.GIT_BOT_USERNAME }}"
           git config user.email "${{ env.GIT_BOT_EMAIL }}"
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Simulate PR merge for changelog updates
         run: |
           git checkout ${{ env.DEFAULT_BRANCH }}
 
-          if [[ ${{ github.event_name == 'pull_request' }}  = 'true' ]]; then
-            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }} (#${{ needs.get_pr_info.outputs.pr_number }})"
-          fi
+          # Write commit into file, so we don't have to
+          echo ${{ needs.get_pr_info.outputs.pr_title }} | base64 -d > /tmp/commit_title
 
-          if [[ ${{ github.event_name == 'push' }}  = 'true' ]]; then
-            git commit --all --allow-empty -m "${{ needs.get_pr_info.outputs.pr_title }}"
-          fi
-
+          git commit --all --allow-empty -F /tmp/commit_title
           git log -5
 
       - name: Generate a changelog
@@ -277,8 +275,8 @@ jobs:
           token: ${{ steps.app.outputs.token }}
           fetch-depth: 0
 
-      #- name: Dump context
-      #  uses: crazy-max/ghaction-dump-context@v1.2.1
+      - name: Dump context
+        uses: crazy-max/ghaction-dump-context@v1.2.1
 
       - name: Checkout PR branch
         env:

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add MSRV badge ([#36](https://github.com/tjtelan/git-url-parse-rs/issues/36))
 - Add personal access token to checkout ([#41](https://github.com/tjtelan/git-url-parse-rs/issues/41))
 - Add pre-merge generated updates ([#42](https://github.com/tjtelan/git-url-parse-rs/issues/42))
+- Add support for wasm32-unknown-unknown compilation target ([#44](https://github.com/tjtelan/git-url-parse-rs/issues/44))
 
 ### Fixed
 
@@ -27,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Troubleshoot CI commit fail ([#39](https://github.com/tjtelan/git-url-parse-rs/issues/39))
 - Troubleshoot Post PR ([#40](https://github.com/tjtelan/git-url-parse-rs/issues/40))
-- Labels and MSRV tuning ([#47](https://github.com/tjtelan/git-url-parse-rs/issues/47))
+- Work out ci string parsing ([#48](https://github.com/tjtelan/git-url-parse-rs/issues/48))
 
 ## [0.4.2](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.2) - 2022-05-30
 
