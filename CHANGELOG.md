@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [UNRELEASED]
 
+### Fixed
+
+- Handle case where parse fails on invalid port ([#50](https://github.com/tjtelan/git-url-parse-rs/issues/50))
+
+## [0.4.3](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.3) - 2022-10-11
+
 ### Added
 
 - Add short git URL notation support ([#28](https://github.com/tjtelan/git-url-parse-rs/issues/28))
