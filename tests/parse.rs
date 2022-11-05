@@ -368,6 +368,18 @@ fn ssh_without_organization() {
 }
 
 #[test]
+fn bad_port_number() {
+    let test_url = "https://github.com:crypto-browserify/browserify-rsa.git";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+    assert_eq!(
+        format!("{}", e.err().unwrap()),
+        "Url normalization into url::Url failed"
+    );
+}
+
+#[test]
 fn git() {
     let test_url = "git:github.com/owner/name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");

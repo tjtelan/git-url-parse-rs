@@ -388,8 +388,7 @@ pub fn normalize_url(url: &str) -> Result<Url> {
                 }
             }
         }
-        Err(_e) => {
-            // e will most likely be url::ParseError::RelativeUrlWithoutBase
+        Err(url::ParseError::RelativeUrlWithoutBase) => {
             // If we're here, we're only looking for Scheme::Ssh or Scheme::File
 
             // Assuming we have found Scheme::Ssh if we can find an "@" before ":"
@@ -410,6 +409,9 @@ pub fn normalize_url(url: &str) -> Result<Url> {
                         .with_context(|| "Failed to normalize as file url".to_string())?
                 }
             }
+        }
+        Err(err) => {
+            return Err(eyre!("url parsing failed: {:?}", err));
         }
     })
 }
