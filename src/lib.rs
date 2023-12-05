@@ -107,7 +107,7 @@ impl fmt::Display for GitUrl {
                     format!(":{}", &self.path)
                 }
             }
-            _ => (&self.path).to_string(),
+            _ => self.path.to_string(),
         };
 
         let git_url_str = format!("{}{}{}{}{}", scheme_prefix, auth_info, host, port, path);
@@ -198,7 +198,7 @@ impl GitUrl {
                 let mut fullname: Vec<&str> = Vec::new();
 
                 // TODO: Add support for parsing out orgs from these urls
-                let hosts_w_organization_in_path = vec!["dev.azure.com", "ssh.dev.azure.com"];
+                let hosts_w_organization_in_path = ["dev.azure.com", "ssh.dev.azure.com"];
                 //vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 
                 let host_str = normalized
