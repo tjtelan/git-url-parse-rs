@@ -1,36 +1,37 @@
 use std::fmt;
 use std::str::FromStr;
 
+use displaydoc::Display;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use regex::Regex;
-use strum_macros::{Display, EnumString, EnumVariantNames};
+
 use tracing::debug;
 use url::Url;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Display)]
 pub enum GitUrlError {
-    #[error("Found null byte within input url before parsing")]
+    /// Found null byte within input url before parsing
     NullByteFound,
-    #[error("url parsing failed")]
+    /// url parsing failed
     UrlParseFail(#[from] url::ParseError),
-    #[error("regex failed")]
+    /// regex failed
     RegexFail(#[from] regex::Error),
-    #[error("SSH normalization pattern not covered for: {0}")]
+    /// SSH normalization pattern not covered for: {0}
     SshNormalizationFail(String),
-    #[error("file:// normalization failed: {0}")]
+    /// file:// normalization failed: {0}
     FileNormalizationFail(String),
-    #[error("Scheme unsupported: {0}")]
+    /// Scheme unsupported: {0}
     SchemeUnsupported(String),
-    #[error("git url is not of expected format: {0}")]
+    /// git url is not of expected format: {0}
     GitUrlUnsupported(String),
-    #[error("URL host could not be represented as string")]
+    /// URL host could not be represented as string
     GitUrlNoHost,
 }
 
 /// Supported uri schemes for parsing
-#[derive(Debug, Error, PartialEq, Eq, EnumString, EnumVariantNames, Clone, Display, Copy)]
-#[strum(serialize_all = "kebab_case")]
+#[derive(Debug, Error, PartialEq, Eq, Clone, Copy, Display, Serialize, Deserialize)]
 pub enum Scheme {
     /// Represents `file://` url scheme
     File,
@@ -41,7 +42,7 @@ pub enum Scheme {
     /// Represents `git://` url scheme
     Git,
     /// Represents `git+ssh://` url scheme
-    #[strum(serialize = "git+ssh")]
+    #[serde(rename = "git+ssh")]
     GitSsh,
     /// Represents `http://` url scheme
     Http,
@@ -180,7 +181,7 @@ impl GitUrl {
         let normalized = normalize_url(url)?;
 
         // Some pre-processing for paths
-        let scheme = if let Ok(s) = Scheme::from_str(normalized.scheme()) {
+        let scheme = if let Ok(s) = serde_plain::from_str::<Scheme>(normalized.scheme()) {
             s
         } else {
             return Err(GitUrlError::SchemeUnsupported(
@@ -410,7 +411,7 @@ pub fn normalize_url(url: &str) -> Result<Url, GitUrlError> {
 
     Ok(match url_parse {
         Ok(u) => {
-            match Scheme::from_str(u.scheme()) {
+            match serde_plain::from_str::<Scheme>(u.scheme()) {
                 Ok(_p) => u,
                 Err(_e) => {
                     // Catch case when an ssh url is given w/o a user

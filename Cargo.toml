@@ -12,17 +12,16 @@ repository = "https://github.com/tjtelan/git-url-parse-rs"
 version = "0.5.0"
 
 [features]
-#default = []
-#full = ["error_handle_reporting"]
-#error_handle_reporting = ["color-eyre"]
+default = []
 
 [dependencies]
 tracing = "0.1"
 url = "^2.2"
-strum = "^0.25"
-strum_macros = "^0.25"
 regex = "^1.4"
 thiserror = "1.0.50"
+displaydoc = "0.2.4"
+serde_plain = "1.0.2"
+serde = { version = "1.0.193", features = ["derive"] }
 
 [dev-dependencies]
 env_logger = "^0.10"
