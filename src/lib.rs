@@ -1,14 +1,13 @@
 use color_eyre::eyre::{eyre, WrapErr};
 pub use color_eyre::Result;
-use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
-use strum_macros::{Display, EnumString, EnumVariantNames};
+use strum_macros::{Display, EnumString, VariantNames};
 use tracing::debug;
 use url::Url;
 
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, Eq, EnumString, EnumVariantNames, Clone, Display, Copy)]
+#[derive(Debug, PartialEq, Eq, EnumString, VariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Scheme {
     /// Represents `file://` url scheme
@@ -354,6 +353,7 @@ fn normalize_file_path(_filepath: &str) -> Result<Url> {
 pub fn normalize_url(url: &str) -> Result<Url> {
     debug!("Processing: {:?}", &url);
 
+    // TODO: Should this be extended to check for any whitespace?
     // Error if there are null bytes within the url
     // https://github.com/tjtelan/git-url-parse-rs/issues/16
     if url.contains('\0') {
@@ -363,10 +363,12 @@ pub fn normalize_url(url: &str) -> Result<Url> {
     // We're going to remove any trailing slash before running through Url::parse
     let trim_url = url.trim_end_matches('/');
 
+    // TODO: Remove support for this form when I go to next major version.
+    // I forget what it supports, and it isn't obvious after searching for examples
     // normalize short git url notation: git:host/path
-    let url_to_parse = if Regex::new(r"^git:[^/]")
-        .with_context(|| "Failed to build short git url regex for testing against url".to_string())?
-        .is_match(trim_url)
+    let url_to_parse = if trim_url.starts_with("git:") && !trim_url.starts_with("git://")
+    //.with_context(|| "Failed to build short git url regex for testing against url".to_string())?
+    //.is_match(trim_url)
     {
         trim_url.replace("git:", "git://")
     } else {
@@ -388,16 +390,18 @@ pub fn normalize_url(url: &str) -> Result<Url> {
                 }
             }
         }
+
+        // TODO: Add test for this
         Err(url::ParseError::RelativeUrlWithoutBase) => {
             // If we're here, we're only looking for Scheme::Ssh or Scheme::File
 
             // Assuming we have found Scheme::Ssh if we can find an "@" before ":"
             // Otherwise we have Scheme::File
-            let re = Regex::new(r"^\S+(@)\S+(:).*$").with_context(|| {
-                "Failed to build ssh git url regex for testing against url".to_string()
-            })?;
+            //let re = Regex::new(r"^\S+(@)\S+(:).*$").with_context(|| {
+            //    "Failed to build ssh git url regex for testing against url".to_string()
+            //})?;
 
-            match re.is_match(trim_url) {
+            match is_ssh_url(trim_url) {
                 true => {
                     debug!("Scheme::SSH match for normalization");
                     normalize_ssh_url(trim_url)
@@ -414,4 +418,37 @@ pub fn normalize_url(url: &str) -> Result<Url> {
             return Err(eyre!("url parsing failed: {:?}", err));
         }
     })
+}
+
+// Valid ssh `url` for cloning have a usernames,
+// but we don't require it classification or parsing purposes
+// However a path must be specified with a `:`
+fn is_ssh_url(url: &str) -> bool {
+    // if we do not have a path
+    if !url.contains(':') {
+        return false;
+    }
+
+    // if we have a username, expect it before the path (Are usernames with colons valid?)
+    if let (Some(at_pos), Some(colon_pos)) = (url.find('@'), url.find(':')) {
+        if colon_pos < at_pos {
+            return false;
+        }
+
+        // Make sure we provided a username, and not just `@`
+        let parts: Vec<&str> = url.split('@').collect();
+        if parts.len() != 2 && !parts[0].is_empty() {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    // it's an ssh url if we have a domain:path pattern
+    let parts: Vec<&str> = url.split(':').collect();
+    if parts.len() != 2 && !parts[0].is_empty() && !parts[1].is_empty() {
+        return false;
+    } else {
+        return true;
+    }
 }
