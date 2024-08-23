@@ -1,4 +1,4 @@
-use anyhow::Result;
+use color_eyre::Result;
 use git_url_parse::GitUrl;
 
 fn main() -> Result<()> {
