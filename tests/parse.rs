@@ -310,7 +310,7 @@ fn relative_windows_path() {
 }
 
 // Issue #7 - Absolute Windows paths will not parse at all
-#[should_panic(expected = "index out of bounds: the len is 1 but the index is 1")]
+#[should_panic(expected = "git url is not of expected format")]
 #[test]
 fn absolute_windows_path() {
     let test_url = "c:\\project-name.git";
@@ -326,6 +326,74 @@ fn absolute_windows_path() {
         token: None,
         port: None,
         path: "c:\\project-name.git".to_string(),
+        git_suffix: true,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+#[test]
+fn ssh_user_path_not_acctname_reponame_format() {
+    let test_url = "git@test.com:repo";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+    assert_eq!(
+        format!("{}", e.err().unwrap()),
+        "git url is not of expected format"
+    );
+}
+
+#[test]
+fn ssh_without_organization() {
+    let test_url = "ssh://f589726c3611:29418/repo";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("f589726c3611".to_string()),
+        name: "repo".to_string(),
+        owner: Some("repo".to_string()),
+        organization: None,
+        fullname: "repo/repo".to_string(),
+        scheme: Scheme::Ssh,
+        user: None,
+        token: None,
+        port: Some(29418),
+        path: "repo".to_string(),
+        git_suffix: false,
+        scheme_prefix: true,
+    };
+
+    assert_eq!(parsed, expected);
+}
+
+#[test]
+fn bad_port_number() {
+    let test_url = "https://github.com:crypto-browserify/browserify-rsa.git";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+    assert_eq!(
+        format!("{}", e.err().unwrap()),
+        "Url normalization into url::Url failed"
+    );
+}
+
+#[test]
+fn git() {
+    let test_url = "git:github.com/owner/name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    let expected = GitUrl {
+        host: Some("github.com".to_string()),
+        name: "name".to_string(),
+        owner: Some("owner".to_string()),
+        organization: None,
+        fullname: "owner/name".to_string(),
+        scheme: Scheme::Git,
+        user: None,
+        token: None,
+        port: None,
+        path: "/owner/name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
     };

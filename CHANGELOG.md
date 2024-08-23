@@ -1,37 +1,93 @@
-# [0.4.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.1...v0.4.0)
-- Migrate to Rust 2021
-- Check for null bytes within input url before parsing (+ adding tests from [#16](https://github.com/tjtelan/git-url-parse-rs/issues/16))
-- Replace `anyhow` with `color-eyre`
-- Replace panic behavior with returning `Err()`
-- Update dependencies
-- Clippy/rustfmt fixes + add clippy/rustfmt checks to CI
+# Changelog
 
-# [0.3.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.3.0...v0.3.1)
-- Loosen dependency restrictions in `Cargo.toml` ([#12](https://github.com/tjtelan/git-url-parse-rs/issues/12))
-- Update `strum` + `strum_macros` ([#14](https://github.com/tjtelan/git-url-parse-rs/issues/14))
+All notable changes to this project will be documented in this file.
 
-# [0.3.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.2.0...v0.3.0) (2020-10-02)
-- Add `CHANGELOG.md`
-- Add new schemes `Ftp` and `Ftps`
-- Update `GitUrl` format for `Scheme::File` for `GitUrl.host` and `GitUrl.path`
-- Add more tests
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [0.2.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.1.1...v0.2.0) (2020-05-13)
-- Updating `GitUrl` format 
-- Add `trim_auth()`
-- Add `impl Display` for `GitUrl`
-- Rename enum `Protocol` to `Scheme`
+## [UNRELEASED]
 
-# [0.1.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.1.0...v0.1.1) (2020-05-09)
-- Add CI via Github Actions
-- Add badges for docs, crates, build to `README`
-- Update `README.md`
-- Making enums and Structs `Clone`
+### Fixed
 
-# [0.1.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.0.1...v0.1.0) (2020-02-05)
-- Add support for Azure DevOps
-- Add `README.md`
+- Handle case where parse fails on invalid port ([#50](https://github.com/tjtelan/git-url-parse-rs/issues/50))
 
-# [0.0.1](https://github.com/tjtelan/git-url-parse-rs/commit/9255fc3f0516e6cfa60c651dd0436fa702b701b1) (2020-01-21)
-- Pre-process urls before feeding to `url` crate
-- Specialized normalization rules between ssh or file path urls
+## [0.4.3](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.3) - 2022-10-11
+
+### Added
+
+- Add short git URL notation support ([#28](https://github.com/tjtelan/git-url-parse-rs/issues/28))
+- Add MSRV badge ([#36](https://github.com/tjtelan/git-url-parse-rs/issues/36))
+- Add personal access token to checkout ([#41](https://github.com/tjtelan/git-url-parse-rs/issues/41))
+- Add pre-merge generated updates ([#42](https://github.com/tjtelan/git-url-parse-rs/issues/42))
+- Add support for wasm32-unknown-unknown compilation target ([#44](https://github.com/tjtelan/git-url-parse-rs/issues/44))
+
+### Fixed
+
+- Update CHANGELOG from Github Actions
+- Make changelog update fixup to PR commit ([#33](https://github.com/tjtelan/git-url-parse-rs/issues/33))
+- Fix post pr workflow ([#37](https://github.com/tjtelan/git-url-parse-rs/issues/37))
+- Post PR: Include all PR files with changelog commit with `--all` ([#38](https://github.com/tjtelan/git-url-parse-rs/issues/38))
+- Add dependency for update job completion before Bors merges ([#43](https://github.com/tjtelan/git-url-parse-rs/issues/43))
+- Fix post merge lint ([#45](https://github.com/tjtelan/git-url-parse-rs/issues/45))
+
+### Other
+
+- Troubleshoot CI commit fail ([#39](https://github.com/tjtelan/git-url-parse-rs/issues/39))
+- Troubleshoot Post PR ([#40](https://github.com/tjtelan/git-url-parse-rs/issues/40))
+- Work out ci string parsing ([#48](https://github.com/tjtelan/git-url-parse-rs/issues/48))
+
+## [0.4.2](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.2) - 2022-05-30
+
+### Added
+
+- Support Gerrit source code ([#24](https://github.com/tjtelan/git-url-parse-rs/issues/24))
+
+### CI
+
+- Replace log crate with tracing ([#25](https://github.com/tjtelan/git-url-parse-rs/issues/25))
+
+## [0.4.1](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.1) - 2022-05-26
+
+### Fixed
+
+- Fix a panic case ([#21](https://github.com/tjtelan/git-url-parse-rs/issues/21))
+
+### Other
+
+- Loosens dependency restrictions ([#12](https://github.com/tjtelan/git-url-parse-rs/issues/12)) ([#13](https://github.com/tjtelan/git-url-parse-rs/issues/13))
+- Ci tune ([#18](https://github.com/tjtelan/git-url-parse-rs/issues/18))
+
+### Removed
+
+- Update dependencies and readme ([#23](https://github.com/tjtelan/git-url-parse-rs/issues/23))
+
+## [0.2.0](https://github.com/tjtelan/git-url-parse-rs/tree/v0.2.0) - 2020-05-13
+
+### Added
+
+- Adding build + test
+- Adding badges to README.md
+
+### Other
+
+- Making enums and structs Clone
+
+## [0.1.0](https://github.com/tjtelan/git-url-parse-rs/tree/v0.1.0) - 2020-02-05
+
+### Added
+
+- Adding docs url to Cargo.toml
+- Adding support for Azure Devops repos
+
+### Other
+
+- Updating Cargo.toml for packaging
+
+## [0.0.1](https://github.com/tjtelan/git-url-parse-rs/tree/v0.0.1) - 2020-01-22
+
+### Other
+
+- Initial commit
+- Initial code commit
+
+<!-- generated by git-cliff -->

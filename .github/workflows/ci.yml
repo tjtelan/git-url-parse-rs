@@ -28,20 +28,28 @@ jobs:
           - name: Build
             subcommand: build --release --all-features --verbose
     steps:
-    - uses: actions/checkout@v2
-    - name: Stable with rustfmt and clippy
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        components: rustfmt, clippy
-    - uses: Swatinem/rust-cache@v1
-    - name: cargo check - ${{ matrix.cargo_checks.name }} 
-      run: cargo ${{ matrix.cargo_checks.subcommand }}
+      - uses: actions/checkout@v2
+      - name: Stable with rustfmt and clippy
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v1
+      - name: cargo check - ${{ matrix.cargo_checks.name }}
+        run: cargo ${{ matrix.cargo_checks.subcommand }}
+
+  update-project-stuff:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    uses: ./.github/workflows/update-repo-stuff.yml
+    secrets: inherit
+
   done:
     name: Done
     if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs: [ci]
+    needs:
+      - ci
+      - update-project-stuff
     runs-on: ubuntu-latest
     steps:
       - name: Done
