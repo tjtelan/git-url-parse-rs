@@ -488,7 +488,7 @@ fn is_ssh_url(url: &str) -> bool {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum GitUrlParseError {
     #[error("Error from Url crate")]
     UrlParseError(#[from] url::ParseError),

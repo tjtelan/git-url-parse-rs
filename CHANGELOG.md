@@ -7,10 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.5](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.5) - 2024-09-06
 
+### CI
+
+- Update changelog
+
 ### Changed
 
 - Update MSRV badge
 - Update README badges
+
+### Fixed
+
+- Add test for #51
 
 ### Other
 

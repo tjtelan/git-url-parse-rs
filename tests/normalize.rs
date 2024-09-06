@@ -165,3 +165,21 @@ fn null_in_input2() {
 
     assert!(normalized.is_err());
 }
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/51
+#[test]
+fn large_bad_input1() {
+    let test_url = std::iter::repeat("g@1::::").take(10000).collect::<String>();
+    let normalized = normalize_url(&test_url);
+
+    assert!(normalized.is_err());
+}
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/51
+#[test]
+fn large_bad_input2() {
+    let test_url = std::iter::repeat(":").take(10000).collect::<String>();
+    let normalized = normalize_url(&test_url);
+
+    assert!(normalized.is_err());
+}
