@@ -2,11 +2,10 @@
 
 ![Minimum Supported Rust Version](https://raw.githubusercontent.com/tjtelan/git-url-parse-rs/main/.github/assets/msrv-badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/git-url-parse)](https://crates.io/crates/git-url-parse)
-![Crates.io](https://img.shields.io/crates/d/git-url-parse)
-[![Github actions build status](https://github.com/tjtelan/git-url-parse-rs/workflows/git-url-parse/badge.svg)](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/rust.yml)
+[![Github actions CI status](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/ci.yml)
 [![docs.rs](https://docs.rs/git-url-parse/badge.svg)](https://docs.rs/git-url-parse/)
-[![licence](https://img.shields.io/github/license/tjtelan/git-url-parse-rs)](LICENSE)
-![Maintenance](https://img.shields.io/maintenance/yes/2022)
+[![License](https://img.shields.io/github/license/tjtelan/git-url-parse-rs)](LICENSE)
+![Maintenance](https://img.shields.io/maintenance/yes/2024)
 
 Supports common protocols as specified by the [Pro Git book](https://git-scm.com/book/en/v2)
 

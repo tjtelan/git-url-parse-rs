@@ -310,7 +310,7 @@ fn relative_windows_path() {
 }
 
 // Issue #7 - Absolute Windows paths will not parse at all
-#[should_panic(expected = "git url is not of expected format")]
+#[should_panic(expected = "URL parse failed: UnexpectedFormat")]
 #[test]
 fn absolute_windows_path() {
     let test_url = "c:\\project-name.git";
@@ -341,7 +341,7 @@ fn ssh_user_path_not_acctname_reponame_format() {
     assert!(e.is_err());
     assert_eq!(
         format!("{}", e.err().unwrap()),
-        "git url is not of expected format"
+        "Git Url not in expected format"
     );
 }
 

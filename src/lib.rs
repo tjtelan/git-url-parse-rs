@@ -1,14 +1,14 @@
-use color_eyre::eyre::{eyre, WrapErr};
-pub use color_eyre::Result;
-use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
-use strum_macros::{Display, EnumString, EnumVariantNames};
-use tracing::debug;
+use strum::{Display, EnumString, VariantNames};
+use thiserror::Error;
 use url::Url;
 
+#[cfg(feature = "tracing")]
+use tracing::debug;
+
 /// Supported uri schemes for parsing
-#[derive(Debug, PartialEq, Eq, EnumString, EnumVariantNames, Clone, Display, Copy)]
+#[derive(Debug, PartialEq, Eq, EnumString, VariantNames, Clone, Display, Copy)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Scheme {
     /// Represents `file://` url scheme
@@ -136,7 +136,7 @@ impl Default for GitUrl {
 }
 
 impl FromStr for GitUrl {
-    type Err = color_eyre::Report;
+    type Err = GitUrlParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         GitUrl::parse(s)
@@ -154,14 +154,22 @@ impl GitUrl {
     }
 
     /// Returns a `Result<GitUrl>` after normalizing and parsing `url` for metadata
-    pub fn parse(url: &str) -> Result<GitUrl> {
+    pub fn parse(url: &str) -> Result<GitUrl, GitUrlParseError> {
         // Normalize the url so we can use Url crate to process ssh urls
-        let normalized = normalize_url(url)
-            .with_context(|| "Url normalization into url::Url failed".to_string())?;
+        let normalized = if let Ok(url) = normalize_url(url) {
+            url
+        } else {
+            return Err(GitUrlParseError::UrlNormalizeFailed);
+        };
 
         // Some pre-processing for paths
-        let scheme = Scheme::from_str(normalized.scheme())
-            .with_context(|| format!("Scheme unsupported: {:?}", normalized.scheme()))?;
+        let scheme = if let Ok(scheme) = Scheme::from_str(normalized.scheme()) {
+            scheme
+        } else {
+            return Err(GitUrlParseError::UnsupportedScheme(
+                normalized.scheme().to_string(),
+            ));
+        };
 
         // Normalized ssh urls can always have their first '/' removed
         let urlpath = match &scheme {
@@ -177,6 +185,7 @@ impl GitUrl {
 
         // Parse through path for name,owner,organization
         // Support organizations for Azure Devops
+        #[cfg(feature = "tracing")]
         debug!("The urlpath: {:?}", &urlpath);
 
         // Most git services use the path for metadata in the same way, so we're going to separate
@@ -187,9 +196,13 @@ impl GitUrl {
         //
         // organizations are going to be supported on a per-host basis
         let splitpath = &urlpath.rsplit_terminator('/').collect::<Vec<&str>>();
+
+        #[cfg(feature = "tracing")]
         debug!("rsplit results for metadata: {:?}", splitpath);
 
         let name = splitpath[0].trim_end_matches(".git").to_string();
+
+        // TODO:  I think here is where we want to update the url pattern identification step.. I want to be able to have a hint that the user can pass
 
         let (owner, organization, fullname) = match &scheme {
             // We're not going to assume anything about metadata from a filepath
@@ -201,12 +214,15 @@ impl GitUrl {
                 let hosts_w_organization_in_path = vec!["dev.azure.com", "ssh.dev.azure.com"];
                 //vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 
-                let host_str = normalized
-                    .host_str()
-                    .ok_or(eyre!("Host from URL could not be represented as str"))?;
+                let host_str = if let Some(host) = normalized.host_str() {
+                    host
+                } else {
+                    return Err(GitUrlParseError::UnsupportedUrlHostFormat);
+                };
 
                 match hosts_w_organization_in_path.contains(&host_str) {
                     true => {
+                        #[cfg(feature = "tracing")]
                         debug!("Found a git provider with an org");
 
                         // The path differs between git:// and https:// schemes
@@ -242,16 +258,18 @@ impl GitUrl {
                                     fullname.join("/"),
                                 )
                             }
-                            _ => return Err(eyre!("Scheme not supported for host")),
+
+                            // TODO: I'm not sure if I want to support throwing this error long-term
+                            _ => return Err(GitUrlParseError::UnexpectedScheme),
                         }
                     }
                     false => {
                         if !url.starts_with("ssh") && splitpath.len() < 2 {
-                            return Err(eyre!("git url is not of expected format"));
+                            return Err(GitUrlParseError::UnexpectedFormat);
                         }
 
                         let position = match splitpath.len() {
-                            0 => return Err(eyre!("git url is not of expected format")),
+                            0 => return Err(GitUrlParseError::UnexpectedFormat),
                             1 => 0,
                             _ => 1,
                         };
@@ -313,19 +331,21 @@ impl GitUrl {
 /// Prepends `ssh://` to url
 ///
 /// Supports absolute and relative paths
-fn normalize_ssh_url(url: &str) -> Result<Url> {
+fn normalize_ssh_url(url: &str) -> Result<Url, GitUrlParseError> {
     let u = url.split(':').collect::<Vec<&str>>();
 
     match u.len() {
         2 => {
+            #[cfg(feature = "tracing")]
             debug!("Normalizing ssh url: {:?}", u);
             normalize_url(&format!("ssh://{}/{}", u[0], u[1]))
         }
         3 => {
+            #[cfg(feature = "tracing")]
             debug!("Normalizing ssh url with ports: {:?}", u);
             normalize_url(&format!("ssh://{}:{}/{}", u[0], u[1], u[2]))
         }
-        _default => Err(eyre!("SSH normalization pattern not covered for: {:?}", u)),
+        _default => Err(GitUrlParseError::UnsupportedSshUrlFormat),
     }
 }
 
@@ -333,41 +353,47 @@ fn normalize_ssh_url(url: &str) -> Result<Url> {
 ///
 /// Prepends `file://` to url
 #[cfg(any(unix, windows, target_os = "redox", target_os = "wasi"))]
-fn normalize_file_path(filepath: &str) -> Result<Url> {
+fn normalize_file_path(filepath: &str) -> Result<Url, GitUrlParseError> {
     let fp = Url::from_file_path(filepath);
 
     match fp {
         Ok(path) => Ok(path),
-        Err(_e) => Ok(normalize_url(&format!("file://{}", filepath))
-            .with_context(|| "file:// normalization failed".to_string())?),
+        Err(_e) => {
+            if let Ok(file_url) = normalize_url(&format!("file://{}", filepath)) {
+                Ok(file_url)
+            } else {
+                return Err(GitUrlParseError::FileUrlNormalizeFailedSchemeAdded);
+            }
+        }
     }
 }
 
 #[cfg(target_arch = "wasm32")]
-fn normalize_file_path(_filepath: &str) -> Result<Url> {
+fn normalize_file_path(_filepath: &str) -> Result<Url, GitUrlParseError> {
     unreachable!()
 }
 
 /// `normalize_url` takes in url as `&str` and takes an opinionated approach to identify
 /// `ssh://` or `file://` urls that require more information to be added so that
 /// they can be parsed more effectively by `url::Url::parse()`
-pub fn normalize_url(url: &str) -> Result<Url> {
+pub fn normalize_url(url: &str) -> Result<Url, GitUrlParseError> {
+    #[cfg(feature = "tracing")]
     debug!("Processing: {:?}", &url);
 
+    // TODO: Should this be extended to check for any whitespace?
     // Error if there are null bytes within the url
     // https://github.com/tjtelan/git-url-parse-rs/issues/16
     if url.contains('\0') {
-        return Err(eyre!("Found null bytes within input url before parsing"));
+        return Err(GitUrlParseError::FoundNullBytes);
     }
 
     // We're going to remove any trailing slash before running through Url::parse
     let trim_url = url.trim_end_matches('/');
 
+    // TODO: Remove support for this form when I go to next major version.
+    // I forget what it supports, and it isn't obvious after searching for examples
     // normalize short git url notation: git:host/path
-    let url_to_parse = if Regex::new(r"^git:[^/]")
-        .with_context(|| "Failed to build short git url regex for testing against url".to_string())?
-        .is_match(trim_url)
-    {
+    let url_to_parse = if trim_url.starts_with("git:") && !trim_url.starts_with("git://") {
         trim_url.replace("git:", "git://")
     } else {
         trim_url.to_string()
@@ -381,37 +407,126 @@ pub fn normalize_url(url: &str) -> Result<Url> {
                 Ok(_p) => u,
                 Err(_e) => {
                     // Catch case when an ssh url is given w/o a user
+                    #[cfg(feature = "tracing")]
                     debug!("Scheme parse fail. Assuming a userless ssh url");
-                    normalize_ssh_url(trim_url).with_context(|| {
-                        "No url scheme was found, then failed to normalize as ssh url.".to_string()
-                    })?
+                    if let Ok(ssh_url) = normalize_ssh_url(trim_url) {
+                        ssh_url
+                    } else {
+                        return Err(GitUrlParseError::SshUrlNormalizeFailedNoScheme);
+                    }
                 }
             }
         }
-        Err(url::ParseError::RelativeUrlWithoutBase) => {
-            // If we're here, we're only looking for Scheme::Ssh or Scheme::File
 
+        // If we're here, we're only looking for Scheme::Ssh or Scheme::File
+        // TODO: Add test for this
+        Err(url::ParseError::RelativeUrlWithoutBase) => {
             // Assuming we have found Scheme::Ssh if we can find an "@" before ":"
             // Otherwise we have Scheme::File
-            let re = Regex::new(r"^\S+(@)\S+(:).*$").with_context(|| {
-                "Failed to build ssh git url regex for testing against url".to_string()
-            })?;
+            //let re = Regex::new(r"^\S+(@)\S+(:).*$").with_context(|| {
+            //    "Failed to build ssh git url regex for testing against url".to_string()
+            //})?;
 
-            match re.is_match(trim_url) {
+            match is_ssh_url(trim_url) {
                 true => {
+                    #[cfg(feature = "tracing")]
                     debug!("Scheme::SSH match for normalization");
-                    normalize_ssh_url(trim_url)
-                        .with_context(|| "Failed to normalize as ssh url".to_string())?
+                    normalize_ssh_url(trim_url)?
                 }
                 false => {
+                    #[cfg(feature = "tracing")]
                     debug!("Scheme::File match for normalization");
-                    normalize_file_path(trim_url)
-                        .with_context(|| "Failed to normalize as file url".to_string())?
+                    normalize_file_path(trim_url)?
                 }
             }
         }
         Err(err) => {
-            return Err(eyre!("url parsing failed: {:?}", err));
+            return Err(GitUrlParseError::from(err));
         }
     })
+}
+
+// Valid ssh `url` for cloning have a usernames,
+// but we don't require it classification or parsing purposes
+// However a path must be specified with a `:`
+fn is_ssh_url(url: &str) -> bool {
+    // if we do not have a path
+    if !url.contains(':') {
+        return false;
+    }
+
+    // if we have a username, expect it before the path (Are usernames with colons valid?)
+    if let (Some(at_pos), Some(colon_pos)) = (url.find('@'), url.find(':')) {
+        if colon_pos < at_pos {
+            return false;
+        }
+
+        // Make sure we provided a username, and not just `@`
+        let parts: Vec<&str> = url.split('@').collect();
+        if parts.len() != 2 && !parts[0].is_empty() {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    // it's an ssh url if we have a domain:path pattern
+    let parts: Vec<&str> = url.split(':').collect();
+
+    // FIXME: I am not sure how to validate a url with a port
+    //if parts.len() != 3 && !parts[0].is_empty() && !parts[1].is_empty() && !parts[2].is_empty() {
+    //    return false;
+    //}
+
+    // This should also handle if a port is specified
+    // no port example: ssh://user@domain:path/to/repo.git
+    // port example: ssh://user@domain:port/path/to/repo.git
+    if parts.len() != 2 && !parts[0].is_empty() && !parts[1].is_empty() {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum GitUrlParseError {
+    #[error("Error from Url crate")]
+    UrlParseError(#[from] url::ParseError),
+
+    #[error("Url normalization into url::Url failed")]
+    UrlNormalizeFailed,
+
+    #[error("No url scheme was found, then failed to normalize as ssh url.")]
+    SshUrlNormalizeFailedNoScheme,
+
+    #[error("No url scheme was found, then failed to normalize as ssh url after adding 'ssh://'")]
+    SshUrlNormalizeFailedSchemeAdded,
+
+    #[error("Failed to normalize as ssh url after adding 'ssh://'")]
+    SshUrlNormalizeFailedSchemeAddedWithPorts,
+
+    #[error("No url scheme was found, then failed to normalize as file url.")]
+    FileUrlNormalizeFailedNoScheme,
+
+    #[error(
+        "No url scheme was found, then failed to normalize as file url after adding 'file://'"
+    )]
+    FileUrlNormalizeFailedSchemeAdded,
+
+    #[error("Git Url not in expected format")]
+    UnexpectedFormat,
+
+    // FIXME: Keep an eye on this error for removal
+    #[error("Git Url for host using unexpected scheme")]
+    UnexpectedScheme,
+
+    #[error("Scheme unsupported: {0}")]
+    UnsupportedScheme(String),
+    #[error("Host from Url cannot be str or does not exist")]
+    UnsupportedUrlHostFormat,
+    #[error("Git Url not in expected format for SSH")]
+    UnsupportedSshUrlFormat,
+
+    #[error("Found null bytes within input url before parsing")]
+    FoundNullBytes,
 }

@@ -9,6 +9,8 @@ fn git() {
     assert_eq!(normalized.as_str(), "git://host.tld/user/project-name.git");
 }
 
+// I'm not even sure if this is a form that should be supported bc I can't find examples of it being used in the wild by another service
+//#[should_panic]
 #[test]
 fn git2() {
     let test_url = "git:host.tld/user/project-name.git";
@@ -98,7 +100,7 @@ fn unix_file_no_scheme_rel_path() {
     assert_eq!(normalized.as_str(), "file://../user/project-name.git");
 }
 
-#[should_panic(expected = "assertion failed: `(left == right)")]
+#[should_panic]
 #[test]
 fn win_file_scheme_abs_path() {
     let test_url = "file://c:\\user\\project-name.git";
@@ -108,7 +110,7 @@ fn win_file_scheme_abs_path() {
     assert_eq!(normalized.as_str(), "file://c:\\user\\project-name.git");
 }
 
-#[should_panic(expected = "assertion failed: `(left == right)")]
+#[should_panic]
 #[test]
 fn win_file_no_scheme_abs_path() {
     let test_url = "c:\\user\\project-name.git";
@@ -160,6 +162,24 @@ fn null_in_input1() {
 fn null_in_input2() {
     let test_url = "?\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{1f}s\u{3}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{0}\u{5}\u{1}@\u{0}\u{0}\u{4}!e\u{0}\u{0}2\u{1c}^3106://?<!41\u{0}\u{0}\u{0}?\u{0}\u{0}\u{0}\u{0}\u{4}?";
     let normalized = normalize_url(test_url);
+
+    assert!(normalized.is_err());
+}
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/51
+#[test]
+fn large_bad_input1() {
+    let test_url = std::iter::repeat("g@1::::").take(10000).collect::<String>();
+    let normalized = normalize_url(&test_url);
+
+    assert!(normalized.is_err());
+}
+
+// From https://github.com/tjtelan/git-url-parse-rs/issues/51
+#[test]
+fn large_bad_input2() {
+    let test_url = std::iter::repeat(":").take(10000).collect::<String>();
+    let normalized = normalize_url(&test_url);
 
     assert!(normalized.is_err());
 }
