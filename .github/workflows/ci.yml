@@ -1,12 +1,12 @@
 name: CI
 
 on:
-  push:
+  merge_group:
     branches:
-      - staging
-      - trying
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -15,9 +15,10 @@ env:
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         cargo_checks:
           - name: Enforce default cargo fmt
             subcommand: fmt -- --check
@@ -28,29 +29,29 @@ jobs:
           - name: Build
             subcommand: build --release --all-features --verbose
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Stable with rustfmt and clippy
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: cargo check - ${{ matrix.cargo_checks.name }}
         run: cargo ${{ matrix.cargo_checks.subcommand }}
 
-  update-project-stuff:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    uses: ./.github/workflows/update-repo-stuff.yml
-    secrets: inherit
+  #update-project-stuff:
+  #  if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+  #  uses: ./.github/workflows/update-repo-stuff.yml
+  #  secrets: inherit
 
-  done:
-    name: Done
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    needs:
-      - ci
-      - update-project-stuff
-    runs-on: ubuntu-latest
-    steps:
-      - name: Done
-        run: echo "Done!"
+  #done:
+  #  name: Done
+  #  if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+  #  needs:
+  #    - ci
+  #    - update-project-stuff
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: Done
+  #      run: echo "Done!"

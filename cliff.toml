@@ -17,7 +17,11 @@ body = """
 {% else %}\
     ## [UNRELEASED]
 {% endif %}\
-{% for group, commits in commits | group_by(attribute="group") %}
+
+{% for group, commits in commits 
+    | filter(attribute="merge_commit", value=false)
+    | unique(attribute="message") 
+    | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
         - {{ commit.message | upper_first | split(pat="\n") | first }}\
@@ -33,49 +37,49 @@ footer = """
 
 [git]
 # parse the commits based on https://www.conventionalcommits.org
-conventional_commits = true 
+conventional_commits = true
 # filter out the commits that are not conventional
-filter_unconventional = false 
+filter_unconventional = false
 
 commit_preprocessors = [
-    { pattern = "\\(#([0-9]+)\\)", replace = "([#${1}](https://github.com/tjtelan/git-url-parse-rs/issues/${1}))"}
+    { pattern = "\\(#([0-9]+)\\)", replace = "([#${1}](https://github.com/tjtelan/git-url-parse-rs/issues/${1}))" },
 ]
 
 # regex for parsing and grouping commits
 commit_parsers = [
 
-    { message = ".*[Bb]ump", group = "Noise", skip = true},
-    { message = ".*[Rr]evert", group = "Noise", skip = true},
-    { message = ".*[Cl]ippy", group = "Noise", skip = true},
-    { message = "^Merge pull request", group = "Noise", skip = true},
+    { message = ".*[Bb]ump", group = "Noise", skip = true },
+    { message = ".*[Rr]evert", group = "Noise", skip = true },
+    { message = ".*[Cl]ippy", group = "Noise", skip = true },
+    { message = "^Merge pull request", group = "Noise", skip = true },
 
-    { message = "^test", group = "Fixed"},
-    { message = "^.*[Ff]ix", group = "Fixed"},
-    { message = "^[Rr]esolve", group = "Fixed"},
+    { message = "^test", group = "Fixed" },
+    { message = "^.*[Ff]ix", group = "Fixed" },
+    { message = "^[Rr]esolve", group = "Fixed" },
 
-    { message = "[Cc]ompile", group = "CI"},
-    { message = "[Pp]ublish", group = "CI"},
+    { message = "[Cc]ompile", group = "CI" },
+    { message = "[Pp]ublish", group = "CI" },
 
-    { message = ".*[Dd]eprecate", group = "Removed"},
-    { message = "^[Dd]isable", group = "Removed"},
+    { message = ".*[Dd]eprecate", group = "Removed" },
+    { message = "^[Dd]isable", group = "Removed" },
 
-    { message = ".*[Aa]dd", group = "Added"},
-    { message = ".*[Ss]upport", group = "Added"},
-    { message = ".*[Mm]ake", group = "Added"},
+    { message = ".*[Aa]dd", group = "Added" },
+    { message = ".*[Ss]upport", group = "Added" },
+    { message = ".*[Mm]ake", group = "Added" },
 
-    { message = ".*[Rr]emove", group = "Removed"},
-    { message = ".*[Dd]elete", group = "Removed"},
-    { message = ".*[Dd]isable", group = "Removed"},
+    { message = ".*[Rr]emove", group = "Removed" },
+    { message = ".*[Dd]elete", group = "Removed" },
+    { message = ".*[Dd]isable", group = "Removed" },
 
-    { message = "[Rr]elease", group = "CI"},
-    { message = ".*[Ll]og", group = "CI"},
-    { message = ".*[Bb]uild", group = "CI"},
+    { message = "[Rr]elease", group = "CI" },
+    { message = ".*[Ll]og", group = "CI" },
+    { message = ".*[Bb]uild", group = "CI" },
 
-    { message = ".*[Uu]pdate", group = "Changed"},
+    { message = ".*[Uu]pdate", group = "Changed" },
 
-    { message = ".*[Cc]lean", group = "Other"},
-    { message = ".*[Rr]efactor", group = "Other"},
-    { message = "^.*", group = "Other"},
+    { message = ".*[Cc]lean", group = "Other" },
+    { message = ".*[Rr]efactor", group = "Other" },
+    { message = "^.*", group = "Other" },
 
 ]
 # filter out the commits that are not matched by commit parsers
