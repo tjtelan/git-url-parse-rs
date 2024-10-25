@@ -156,11 +156,7 @@ impl GitUrl {
     /// Returns a `Result<GitUrl>` after normalizing and parsing `url` for metadata
     pub fn parse(url: &str) -> Result<GitUrl, GitUrlParseError> {
         // Normalize the url so we can use Url crate to process ssh urls
-        let normalized = if let Ok(url) = normalize_url(url) {
-            url
-        } else {
-            return Err(GitUrlParseError::UrlNormalizeFailed);
-        };
+        let normalized = normalize_url(url)?;
 
         // Some pre-processing for paths
         let scheme = if let Ok(scheme) = Scheme::from_str(normalized.scheme()) {
@@ -485,11 +481,8 @@ fn is_ssh_url(url: &str) -> bool {
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum GitUrlParseError {
-    #[error("Error from Url crate")]
+    #[error("Error from Url crate: {0}")]
     UrlParseError(#[from] url::ParseError),
-
-    #[error("Url normalization into url::Url failed")]
-    UrlNormalizeFailed,
 
     #[error("No url scheme was found, then failed to normalize as ssh url.")]
     SshUrlNormalizeFailedNoScheme,

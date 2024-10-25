@@ -383,7 +383,7 @@ fn bad_port_number() {
     assert!(e.is_err());
     assert_eq!(
         format!("{}", e.err().unwrap()),
-        "Url normalization into url::Url failed"
+        "Error from Url crate: invalid port number"
     );
 }
 
