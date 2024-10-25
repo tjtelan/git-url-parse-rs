@@ -368,6 +368,14 @@ fn ssh_without_organization() {
 }
 
 #[test]
+fn empty_path() {
+    assert_eq!(
+        GitUrlParseError::EmptyPath,
+        GitUrl::parse("git:").unwrap_err()
+    )
+}
+
+#[test]
 fn bad_port_number() {
     let test_url = "https://github.com:crypto-browserify/browserify-rsa.git";
     let e = GitUrl::parse(test_url);

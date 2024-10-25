@@ -170,6 +170,9 @@ impl GitUrl {
                 normalized.scheme().to_string(),
             ));
         };
+        if normalized.path().is_empty() {
+            return Err(GitUrlParseError::EmptyPath);
+        }
 
         // Normalized ssh urls can always have their first '/' removed
         let urlpath = match &scheme {
@@ -518,6 +521,8 @@ pub enum GitUrlParseError {
     UnsupportedUrlHostFormat,
     #[error("Git Url not in expected format for SSH")]
     UnsupportedSshUrlFormat,
+    #[error("Normalized URL has no path")]
+    EmptyPath,
 
     #[error("Found null bytes within input url before parsing")]
     FoundNullBytes,
