@@ -14,7 +14,7 @@ env:
 jobs:
   get_pr_number_pr_event:
     name: Get the PR number from PR event
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
     steps:
@@ -31,7 +31,7 @@ jobs:
 
   get_pr_number_push_event:
     name: Get the PR number from Push event
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     outputs:
       pr_number: ${{ steps.pr.outputs.number }}
     steps:
@@ -53,7 +53,7 @@ jobs:
 
   get_pr_number:
     name: Get PR number from event
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     needs:
       - get_pr_number_pr_event
       - get_pr_number_push_event
@@ -81,7 +81,7 @@ jobs:
 
   print_inputs:
     name: Print the inputs to the workflow
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     needs:
       - get_pr_number
     steps:
@@ -100,7 +100,7 @@ jobs:
       pr_number: ${{ steps.pr_info.outputs.number }}
       pr_title: ${{ steps.pr_info.outputs.title }}
     permissions: read-all
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -168,7 +168,7 @@ jobs:
 
   generate_changelog:
     name: Generate changelog
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     needs:
       #- bot-label-check
       - get_pr_info
@@ -220,7 +220,7 @@ jobs:
     name: Generate Minimum Supported Rust Version badge
     #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
     #needs: bot-label-check
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -252,7 +252,7 @@ jobs:
   commit_updates:
     name: Commit updates
     #if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    runs-on: ubuntu-latest
+    runs-on: codebuild-poc-PTIN-166-${{ github.run_id }}-${{ github.run_attempt }}
     needs:
       - get_pr_info
       - generate_changelog
