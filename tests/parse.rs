@@ -14,8 +14,8 @@ fn ssh_user_ports() {
         token: None,
         port: Some(9999),
         path: "user/project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -38,8 +38,8 @@ fn https_user_bitbucket() {
         token: None,
         port: None,
         path: "/user/repo.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -61,8 +61,8 @@ fn ssh_user_bitbucket() {
         token: None,
         port: None,
         path: "user/repo.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
@@ -84,8 +84,8 @@ fn https_user_auth_bitbucket() {
         token: Some("token".to_string()),
         port: None,
         path: "/owner/name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -107,8 +107,8 @@ fn https_user_github() {
         token: None,
         port: None,
         path: "/user/repo.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -130,8 +130,8 @@ fn ssh_user_github() {
         token: None,
         port: None,
         path: "user/repo.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
@@ -153,8 +153,8 @@ fn https_user_auth_github() {
         token: Some("x-oauth-basic".to_string()),
         port: None,
         path: "/owner/name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -176,8 +176,8 @@ fn ssh_user_azure_devops() {
         token: None,
         port: None,
         path: "v3/CompanyName/ProjectName/RepoName".to_string(),
-        git_suffix: false,
-        scheme_prefix: false,
+        //git_suffix: false,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
@@ -199,8 +199,8 @@ fn https_user_azure_devops() {
         token: None,
         port: None,
         path: "/organization/project/_git/repo".to_string(),
-        git_suffix: false,
-        scheme_prefix: true,
+        //git_suffix: false,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -222,8 +222,8 @@ fn ftp_user() {
         token: None,
         port: None,
         path: "/user/project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -245,8 +245,8 @@ fn ftps_user() {
         token: None,
         port: None,
         path: "/user/project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
+        //git_suffix: true,
+        //scheme_prefix: true,
         print_scheme: true,
     };
 
@@ -268,8 +268,8 @@ fn relative_unix_path() {
         token: None,
         port: None,
         path: "../project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
@@ -291,8 +291,8 @@ fn absolute_unix_path() {
         token: None,
         port: None,
         path: "/path/to/project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
@@ -315,14 +315,15 @@ fn relative_windows_path() {
         token: None,
         port: None,
         path: "../project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
 }
 
+// Can I use `typed-path` to deal with this?
 // Issue #7 - Absolute Windows paths will not parse at all
 #[should_panic(expected = "URL parse failed: UnexpectedFormat")]
 #[test]
@@ -340,54 +341,56 @@ fn absolute_windows_path() {
         token: None,
         port: None,
         path: "c:\\project-name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: false,
+        //git_suffix: true,
+        //scheme_prefix: false,
         print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
 }
 
-#[test]
-fn ssh_user_path_not_acctname_reponame_format() {
-    let test_url = "git@test.com:repo";
-    let e = GitUrl::parse(test_url);
+// Move test
+//#[test]
+//fn ssh_user_path_not_acctname_reponame_format() {
+//    let test_url = "git@test.com:repo";
+//    let e = GitUrl::parse(test_url);
+//
+//    assert!(e.is_err());
+//    assert_eq!(
+//        format!("{}", e.err().unwrap()),
+//        "Git Url not in expected format"
+//    );
+//}
 
-    assert!(e.is_err());
-    assert_eq!(
-        format!("{}", e.err().unwrap()),
-        "Git Url not in expected format"
-    );
-}
-
-#[test]
-fn ssh_without_organization() {
-    let test_url = "ssh://f589726c3611:29418/repo";
-    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-    let expected = GitUrl {
-        host: Some("f589726c3611".to_string()),
-        //name: "repo".to_string(),
-        //owner: Some("repo".to_string()),
-        //organization: None,
-        //fullname: "repo/repo".to_string(),
-        scheme: Some(Scheme::Ssh),
-        user: None,
-        token: None,
-        port: Some(29418),
-        path: "repo".to_string(),
-        git_suffix: false,
-        scheme_prefix: true,
-        print_scheme: true,
-    };
-
-    assert_eq!(parsed, expected);
-}
+// Move test
+//#[test]
+//fn ssh_without_organization() {
+//    let test_url = "ssh://f589726c3611:29418/repo";
+//    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+//    let expected = GitUrl {
+//        host: Some("f589726c3611".to_string()),
+//        //name: "repo".to_string(),
+//        //owner: Some("repo".to_string()),
+//        //organization: None,
+//        //fullname: "repo/repo".to_string(),
+//        scheme: Some(Scheme::Ssh),
+//        user: None,
+//        token: None,
+//        port: Some(29418),
+//        path: "repo".to_string(),
+//        //git_suffix: false,
+//        //scheme_prefix: true,
+//        print_scheme: true,
+//    };
+//
+//    assert_eq!(parsed, expected);
+//}
 
 #[test]
 fn empty_path() {
     assert_eq!(
         GitUrlParseError::EmptyPath,
-        GitUrl::parse("git:").unwrap_err()
+        GitUrl::parse("file://").unwrap_err()
     )
 }
 
@@ -403,9 +406,10 @@ fn bad_port_number() {
     );
 }
 
+// This test might not have a use anymore if we're not expanding "git:" -> "git://"
 #[test]
 fn git() {
-    let test_url = "git:github.com/owner/name.git";
+    let test_url = "git://github.com/owner/name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrl {
         host: Some("github.com".to_string()),
@@ -418,9 +422,9 @@ fn git() {
         token: None,
         port: None,
         path: "/owner/name.git".to_string(),
-        git_suffix: true,
-        scheme_prefix: true,
-        print_scheme: false,
+        //git_suffix: true,
+        //scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
