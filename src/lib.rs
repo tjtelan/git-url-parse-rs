@@ -40,7 +40,7 @@ pub enum Scheme {
     Other(String), // todo: need test for this
 }
 
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 enum GitUrlParseHint {
     #[default]
     Unknown,
@@ -50,51 +50,7 @@ enum GitUrlParseHint {
     //Custom // needed?
 }
 
-fn scheme(input: &str) -> IResult<&str, Option<&str>> {
-    opt(terminated(
-        alt((
-            tag(Scheme::File.to_string().as_bytes()),
-            tag(Scheme::Ftps.to_string().as_bytes()),
-            tag(Scheme::Ftp.to_string().as_bytes()),
-            tag(Scheme::GitSsh.to_string().as_bytes()),
-            tag(Scheme::Git.to_string().as_bytes()),
-            tag(Scheme::Https.to_string().as_bytes()),
-            tag(Scheme::Http.to_string().as_bytes()),
-            tag(Scheme::Ssh.to_string().as_bytes()),
-            // todo: Other(), needs a test
-        )),
-        tag("://"),
-    ))
-    .parse(input)
-}
-
-fn username(input: &str) -> IResult<&str, Option<&str>> {
-    opt(terminated(take_until("@"), tag("@"))).parse(input)
-}
-
-fn token(input: &str) -> IResult<&str, Option<&str>> {
-    opt(terminated(take_until(":"), tag(":"))).parse(input)
-}
-
-fn hostname(input: &str) -> IResult<&str, Option<&str>> {
-    opt(take_till(|c| c == '/' || c == ':')).parse(input)
-}
-
-fn port(input: &str) -> IResult<&str, Option<&str>> {
-    opt(preceded(tag(":"), take_while(|c: char| c.is_digit(10)))).parse(input)
-}
-
-// This is making an assumption that the path is relative, not absolute
-// This is bc we do not support absolute paths when we also have a port
-fn ssh_path(input: &str) -> IResult<&str, Option<&str>> {
-    opt(preceded(one_of("/:"), rest)).parse(input)
-}
-
-fn path(input: &str) -> IResult<&str, &str> {
-    rest(input)
-}
-
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 struct GitUrlBuilder {
     hint: GitUrlParseHint,
     scheme: Option<Scheme>,
@@ -146,6 +102,50 @@ impl GitUrlBuilder {
         git_url.path = self.path.clone();
 
         git_url
+    }
+
+    fn scheme(input: &str) -> IResult<&str, Option<&str>> {
+        opt(terminated(
+            alt((
+                tag(Scheme::File.to_string().as_bytes()),
+                tag(Scheme::Ftps.to_string().as_bytes()),
+                tag(Scheme::Ftp.to_string().as_bytes()),
+                tag(Scheme::GitSsh.to_string().as_bytes()),
+                tag(Scheme::Git.to_string().as_bytes()),
+                tag(Scheme::Https.to_string().as_bytes()),
+                tag(Scheme::Http.to_string().as_bytes()),
+                tag(Scheme::Ssh.to_string().as_bytes()),
+                // todo: Other(), needs a test
+            )),
+            tag("://"),
+        ))
+        .parse(input)
+    }
+
+    fn username(input: &str) -> IResult<&str, Option<&str>> {
+        opt(terminated(take_until("@"), tag("@"))).parse(input)
+    }
+
+    fn token(input: &str) -> IResult<&str, Option<&str>> {
+        opt(terminated(take_until(":"), tag(":"))).parse(input)
+    }
+
+    fn hostname(input: &str) -> IResult<&str, Option<&str>> {
+        opt(take_till(|c| c == '/' || c == ':')).parse(input)
+    }
+
+    fn port(input: &str) -> IResult<&str, Option<&str>> {
+        opt(preceded(tag(":"), take_while(|c: char| c.is_digit(10)))).parse(input)
+    }
+
+    // This is making an assumption that the path is relative, not absolute
+    // This is bc we do not support absolute paths when we also have a port
+    fn ssh_path(input: &str) -> IResult<&str, Option<&str>> {
+        opt(preceded(one_of("/:"), rest)).parse(input)
+    }
+
+    fn path(input: &str) -> IResult<&str, &str> {
+        rest(input)
     }
 }
 
@@ -300,112 +300,32 @@ impl GitUrl {
         new_giturl
     }
 
-    fn build_init(url: &str) -> Result<GitUrlBuilder, GitUrlParseError> {
-        #[cfg(feature = "tracing")]
-        debug!("Processing: {:?}", &url);
-
-        // TODO: Should this be extended to check for any whitespace?
-        // Error if there are null bytes within the url
-        // https://github.com/tjtelan/git-url-parse-rs/issues/16
-        if url.contains('\0') {
-            return Err(GitUrlParseError::FoundNullBytes);
-        }
-
-        Ok(GitUrlBuilder::default())
-    }
-
     /// Returns a `Result<GitUrl>` after normalizing and parsing `url` for metadata
     pub fn parse(url: &str) -> Result<GitUrl, GitUrlParseError> {
         println!("start: {url}");
         let mut giturl = GitUrlBuilder::init(url)?;
-
         let mut working_url = url;
 
-        if let Ok((leftover, Some(scheme))) = scheme(working_url) {
-            println!("leftover: {leftover}, scheme: {scheme:?}");
-
-            let s = Scheme::from_str(scheme).expect("Unknown scheme");
-
-            giturl.scheme = Some(s.clone());
-            giturl.print_scheme = true;
-            working_url = leftover;
-
-            giturl.hint = match s {
-                Scheme::Ssh => GitUrlParseHint::Sshlike,
-                Scheme::File => GitUrlParseHint::Filelike,
-                _ => GitUrlParseHint::Httplike,
-            }
-        }
-
-        if let Ok((leftover, Some(username))) = username(working_url) {
-            println!("leftover: {leftover}, username: {username:?}");
-            giturl.user = Some(username.to_string());
-
-            working_url = leftover;
-
-            if giturl.hint == GitUrlParseHint::Unknown {
-                giturl.hint = GitUrlParseHint::Sshlike;
-            }
-
-            if let Ok((token, Some(real_username))) = token(username) {
-                println!("token: {token}, real_username: {real_username:?}");
-                giturl.user = Some(real_username.to_string());
-                giturl.token = Some(token.to_string());
-
-                if giturl.hint == GitUrlParseHint::Unknown
-                    || giturl.hint == GitUrlParseHint::Sshlike
-                {
-                    giturl.hint = GitUrlParseHint::Httplike;
-                }
-            }
-        }
+        (giturl, working_url) = parse_scheme(giturl, &working_url);
+        (giturl, working_url) = parse_auth_info(giturl, working_url);
 
         let save_state = working_url;
 
-        if let Ok((leftover, Some(hostname))) = hostname(working_url) {
-            println!("leftover {leftover}, hostname: {hostname}");
-            giturl.host = Some(hostname.to_string());
-            working_url = leftover;
+        (giturl, working_url) = parse_host_port(giturl, working_url);
 
-            if let Ok((leftover, Some(port))) = port(leftover) {
-                if !port.is_empty() {
-                    println!("leftover {leftover}, port: {port}");
-                    giturl.port = Some(u16::from_str(port).expect("Not a valid port"));
-                    working_url = leftover;
-
-                    if giturl.hint == GitUrlParseHint::Unknown {
-                        giturl.hint = GitUrlParseHint::Httplike;
-                    }
-                }
+        match giturl.hint {
+            GitUrlParseHint::Httplike => {}
+            GitUrlParseHint::Sshlike => {
+                (giturl, working_url) = parse_ssh_path(giturl, working_url);
+            }
+            GitUrlParseHint::Filelike | GitUrlParseHint::Unknown => {
+                working_url = save_state;
+                giturl.host = None;
+                giturl.scheme = Some(Scheme::File);
             }
         }
 
-        if giturl.hint == GitUrlParseHint::Sshlike {
-            // https://mslinn.com/git/040-git-urls.html - we only support relative paths when we have ports
-            //if let Some(ssh_path) = working_url.strip_prefix(":") {
-            //}
-
-            if let Ok((_leftover, Some(path))) = ssh_path(working_url) {
-                working_url = path;
-                // This is important for printing the url correctly with the ":"
-                giturl.scheme = Some(Scheme::Ssh)
-            }
-        }
-
-        if giturl.hint == GitUrlParseHint::Unknown {
-            working_url = save_state;
-            giturl.host = None;
-            giturl.scheme = Some(Scheme::File);
-        }
-
-        if let Ok((leftover, path)) = path(working_url) {
-            println!("leftover {leftover}, path: {path}");
-            if path.is_empty() {
-                return Err(GitUrlParseError::EmptyPath);
-            }
-
-            giturl.path = path.to_string();
-        }
+        (giturl, _) = parse_path(giturl, working_url)?;
 
         println!("");
         Ok(giturl.build())
@@ -578,6 +498,125 @@ impl GitUrl {
     }
 }
 
+fn parse_scheme<'a>(giturl:GitUrlBuilder, working_url: &'a str) -> (GitUrlBuilder, &'a str) {
+    let mut builder = giturl.clone();
+
+    if let Ok((leftover, Some(s))) = GitUrlBuilder::scheme(working_url) {
+        println!("leftover: {leftover}, scheme: {s:?}");
+
+        let scheme = Scheme::from_str(s).expect("Unknown scheme");
+
+        builder.hint = match &scheme {
+            Scheme::Ssh => GitUrlParseHint::Sshlike,
+            Scheme::File => GitUrlParseHint::Filelike,
+            _ => GitUrlParseHint::Httplike,
+        };
+
+        builder.scheme = Some(scheme);
+        builder.print_scheme = true;
+        //working_url = leftover;
+
+        (builder, leftover)
+    } else {
+        (builder, working_url)
+    }
+}
+
+fn parse_auth_info<'a>(
+    giturl: GitUrlBuilder,
+    working_url: &'a str,
+) -> (GitUrlBuilder, &'a str) {
+
+    let mut builder = giturl.clone();
+    if let Ok((leftover, Some(username))) = GitUrlBuilder::username(working_url) {
+        println!("leftover: {leftover}, username: {username:?}");
+        builder.user = Some(username.to_string());
+
+        //working_url = leftover;
+
+        if builder.hint == GitUrlParseHint::Unknown {
+           builder.hint = GitUrlParseHint::Sshlike;
+        }
+
+        if let Ok((token, Some(real_username))) = GitUrlBuilder::token(username) {
+            println!("token: {token}, real_username: {real_username:?}");
+            builder.user = Some(real_username.to_string());
+            builder.token = Some(token.to_string());
+
+            if builder.hint == GitUrlParseHint::Unknown || builder.hint == GitUrlParseHint::Sshlike {
+                builder.hint = GitUrlParseHint::Httplike;
+            }
+        }
+
+        (builder, leftover)
+    } else {
+        (builder, working_url)
+    }
+}
+fn parse_host_port<'a>(
+    giturl: GitUrlBuilder,
+    working_url: &'a str,
+) -> (GitUrlBuilder, &'a str) {
+    let mut builder = giturl.clone();
+    let mut save = working_url;
+
+    if let Ok((leftover, Some(hostname))) = GitUrlBuilder::hostname(working_url) {
+        println!("leftover {leftover}, hostname: {hostname}");
+        builder.host = Some(hostname.to_string());
+        //working_url = leftover;
+        save = leftover;
+    }
+
+    if let Ok((leftover, Some(port))) = GitUrlBuilder::port(save) {
+        if !port.is_empty() {
+            println!("leftover {leftover}, port: {port}");
+            builder.port = Some(u16::from_str(port).expect("Not a valid port"));
+            //working_url = leftover;
+            save = leftover;
+
+            if builder.hint == GitUrlParseHint::Unknown {
+                builder.hint = GitUrlParseHint::Httplike;
+            }
+        }
+    }
+
+    (builder, save)
+}
+
+fn parse_ssh_path<'a>(giturl: GitUrlBuilder, working_url: &'a str) -> (GitUrlBuilder, &'a str) {
+
+    let mut builder = giturl.clone();
+    // https://mslinn.com/git/040-git-urls.html - we only support relative paths when we have ports
+    //if let Some(ssh_path) = working_url.strip_prefix(":") {
+    //}
+
+    if let Ok((_leftover, Some(path))) = GitUrlBuilder::ssh_path(working_url) {
+        //working_url = path;
+        // This is important for printing the url correctly with the ":"
+        builder.scheme = Some(Scheme::Ssh);
+        (builder, path)
+    } else {
+        (builder, working_url)
+    }
+}
+
+fn parse_path<'a>(
+    giturl: GitUrlBuilder,
+    working_url: &'a str,
+) -> Result<(GitUrlBuilder, &'a str), GitUrlParseError> {
+    let mut builder = giturl.clone();
+    if let Ok((leftover, path)) = GitUrlBuilder::path(working_url) {
+        println!("leftover {leftover}, path: {path}");
+        if path.is_empty() {
+            return Err(GitUrlParseError::EmptyPath);
+        }
+
+        builder.path = path.to_string();
+        Ok((builder.clone(), leftover))
+    } else {
+        Ok((builder.clone(), working_url))
+    }
+}
 /// `normalize_ssh_url` takes in an ssh url that separates the login info
 /// from the path into with a `:` and replaces it with `/`.
 ///
