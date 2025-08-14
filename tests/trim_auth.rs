@@ -40,7 +40,7 @@ fn https_user_auth_bitbucket() {
     let parsed_and_trimmed = GitUrl::parse(test_url)
         .expect("URL parse failed")
         .trim_auth();
-    let expected = "https://bitbucket.org/owner/name.git";
+    let expected = "https://bitbucket.org/owner/name.git/";
 
     assert_eq!(format!("{}", parsed_and_trimmed), expected);
 }
@@ -51,7 +51,7 @@ fn https_user_github() {
     let parsed_and_trimmed = GitUrl::parse(test_url)
         .expect("URL parse failed")
         .trim_auth();
-    let expected = "https://github.com/user/repo.git";
+    let expected = "https://github.com/user/repo.git/";
 
     assert_eq!(format!("{}", parsed_and_trimmed), expected);
 }
@@ -73,7 +73,7 @@ fn https_user_auth_github() {
     let parsed_and_trimmed = GitUrl::parse(test_url)
         .expect("URL parse failed")
         .trim_auth();
-    let expected = "https://github.com/owner/name.git";
+    let expected = "https://github.com/owner/name.git/";
 
     assert_eq!(format!("{}", parsed_and_trimmed), expected);
 }

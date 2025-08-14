@@ -9,13 +9,14 @@ fn ssh_user_ports() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/project-name".to_string(),
-        scheme: Scheme::Ssh,
+        scheme: Some(Scheme::Ssh),
         user: Some("git".to_string()),
         token: None,
         port: Some(9999),
         path: "user/project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -32,13 +33,14 @@ fn https_user_bitbucket() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/repo".to_string(),
-        scheme: Scheme::Https,
+        scheme: Some(Scheme::Https),
         user: Some("user".to_string()),
         token: None,
         port: None,
         path: "/user/repo.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -54,13 +56,14 @@ fn ssh_user_bitbucket() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/repo".to_string(),
-        scheme: Scheme::Ssh,
+        scheme: Some(Scheme::Ssh),
         user: Some("git".to_string()),
         token: None,
         port: None,
         path: "user/repo.git".to_string(),
         git_suffix: true,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -76,13 +79,14 @@ fn https_user_auth_bitbucket() {
         //owner: Some("owner".to_string()),
         //organization: None,
         //fullname: "owner/name".to_string(),
-        scheme: Scheme::Https,
+        scheme: Some(Scheme::Https),
         user: Some("x-token-auth".to_string()),
         token: Some("token".to_string()),
         port: None,
         path: "/owner/name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -98,13 +102,14 @@ fn https_user_github() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/repo".to_string(),
-        scheme: Scheme::Https,
+        scheme: Some(Scheme::Https),
         user: Some("user".to_string()),
         token: None,
         port: None,
         path: "/user/repo.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -120,13 +125,14 @@ fn ssh_user_github() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/repo".to_string(),
-        scheme: Scheme::Ssh,
+        scheme: Some(Scheme::Ssh),
         user: Some("git".to_string()),
         token: None,
         port: None,
         path: "user/repo.git".to_string(),
         git_suffix: true,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -142,13 +148,14 @@ fn https_user_auth_github() {
         //owner: Some("owner".to_string()),
         //organization: None,
         //fullname: "owner/name".to_string(),
-        scheme: Scheme::Https,
+        scheme: Some(Scheme::Https),
         user: Some("token".to_string()),
         token: Some("x-oauth-basic".to_string()),
         port: None,
         path: "/owner/name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -164,13 +171,14 @@ fn ssh_user_azure_devops() {
         //owner: Some("ProjectName".to_string()),
         //organization: Some("CompanyName".to_string()),
         //fullname: "CompanyName/ProjectName/RepoName".to_string(),
-        scheme: Scheme::Ssh,
+        scheme: Some(Scheme::Ssh),
         user: Some("git".to_string()),
         token: None,
         port: None,
         path: "v3/CompanyName/ProjectName/RepoName".to_string(),
         git_suffix: false,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -186,13 +194,14 @@ fn https_user_azure_devops() {
         //owner: Some("project".to_string()),
         //organization: Some("organization".to_string()),
         //fullname: "organization/project/repo".to_string(),
-        scheme: Scheme::Https,
+        scheme: Some(Scheme::Https),
         user: Some("organization".to_string()),
         token: None,
         port: None,
         path: "/organization/project/_git/repo".to_string(),
         git_suffix: false,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -208,13 +217,14 @@ fn ftp_user() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/project-name".to_string(),
-        scheme: Scheme::Ftp,
+        scheme: Some(Scheme::Ftp),
         user: Some("git".to_string()),
         token: None,
         port: None,
         path: "/user/project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -230,13 +240,14 @@ fn ftps_user() {
         //owner: Some("user".to_string()),
         //organization: None,
         //fullname: "user/project-name".to_string(),
-        scheme: Scheme::Ftps,
+        scheme: Some(Scheme::Ftps),
         user: Some("git".to_string()),
         token: None,
         port: None,
         path: "/user/project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -252,13 +263,14 @@ fn relative_unix_path() {
         //owner: None,
         //organization: None,
         //fullname: "project-name".to_string(),
-        scheme: Scheme::File,
+        scheme: Some(Scheme::File),
         user: None,
         token: None,
         port: None,
         path: "../project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -274,13 +286,14 @@ fn absolute_unix_path() {
         //owner: None,
         //organization: None,
         //fullname: "project-name".to_string(),
-        scheme: Scheme::File,
+        scheme: Some(Scheme::File),
         user: None,
         token: None,
         port: None,
         path: "/path/to/project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -297,13 +310,14 @@ fn relative_windows_path() {
         //owner: None,
         //organization: None,
         //fullname: "project-name".to_string(),
-        scheme: Scheme::File,
+        scheme: Some(Scheme::File),
         user: None,
         token: None,
         port: None,
         path: "../project-name.git".to_string(),
         git_suffix: true,
         scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -321,13 +335,14 @@ fn absolute_windows_path() {
         //owner: None,
         //organization: None,
         //fullname: "project-name".to_string(),
-        scheme: Scheme::File,
+        scheme: Some(Scheme::File),
         user: None,
         token: None,
         port: None,
         path: "c:\\project-name.git".to_string(),
         git_suffix: true,
-        scheme_prefix: true,
+        scheme_prefix: false,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
@@ -355,13 +370,14 @@ fn ssh_without_organization() {
         //owner: Some("repo".to_string()),
         //organization: None,
         //fullname: "repo/repo".to_string(),
-        scheme: Scheme::Ssh,
+        scheme: Some(Scheme::Ssh),
         user: None,
         token: None,
         port: Some(29418),
         path: "repo".to_string(),
         git_suffix: false,
         scheme_prefix: true,
+        print_scheme: true,
     };
 
     assert_eq!(parsed, expected);
@@ -397,13 +413,14 @@ fn git() {
         //owner: Some("owner".to_string()),
         //organization: None,
         //fullname: "owner/name".to_string(),
-        scheme: Scheme::Git,
+        scheme: Some(Scheme::Git),
         user: None,
         token: None,
         port: None,
         path: "/owner/name.git".to_string(),
         git_suffix: true,
         scheme_prefix: true,
+        print_scheme: false,
     };
 
     assert_eq!(parsed, expected);
