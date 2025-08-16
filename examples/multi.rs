@@ -24,7 +24,7 @@ fn main() -> Result<(), GitUrlParseError> {
     ];
 
     for test_url in test_vec {
-        let parsed = GitUrl::parse(test_url)?;
+        let parsed = GitUrl::parse(test_url).unwrap();
         println!("Original: {}", test_url);
         println!("Parsed:   {}", parsed);
         println!("{:?}\n", parsed);
