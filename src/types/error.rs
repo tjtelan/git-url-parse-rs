@@ -1,9 +1,10 @@
+use super::GitUrlBuilderError;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum GitUrlParseError {
-    //#[error("Error from derive_builder")]
-    //DeriveBuilderError(#[from] derive_builder::UninitializedFieldError),
+    #[error("Error from derive_builder")]
+    DeriveBuilderError(#[from] GitUrlBuilderError),
 
     //#[error("Error from Url crate: {0}")]
     //UrlParseError(#[from] url::ParseError),
@@ -22,9 +23,8 @@ pub enum GitUrlParseError {
 
     //#[error("No url scheme was found, then failed to normalize as file url after adding 'file://'")]
     //FileUrlNormalizeFailedSchemeAdded,
-
-    //#[error("Git Url not in expected format")]
-    //UnexpectedFormat,
+    #[error("Git Url not in expected format")]
+    UnexpectedFormat,
 
     // FIXME: Keep an eye on this error for removal
     #[error("Git Url for host using unexpected scheme")]
