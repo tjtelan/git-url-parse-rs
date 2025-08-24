@@ -432,8 +432,7 @@ impl GitUrl {
     where
         T: GitProvider,
     {
-        let g = T::from_git_url(&self);
-        Ok(g)
+        T::from_git_url(&self)
         //Err(GitUrlParseError::UnexpectedFormat)
     }
 
