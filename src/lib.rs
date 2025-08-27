@@ -1,6 +1,7 @@
 mod types;
 pub use types::{
-    GenericProvider, GitUrl, GitUrlBuilder, GitUrlBuilderError, GitUrlParseError, Scheme,
+    GenericProvider, GitProvider, GitUrl, GitUrlBuilder, GitUrlBuilderError, GitUrlParseError,
+    Scheme,
 };
 
 #[cfg(feature = "tracing")]

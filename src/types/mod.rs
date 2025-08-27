@@ -63,7 +63,10 @@ pub(crate) enum GitUrlParseHint {
 #[derive(Debug, PartialEq, Eq, Clone, Builder, Default, Getters, Setters)]
 #[builder(build_fn(validate = "Self::prebuild_check"), field(public))]
 #[get = "pub"]
-pub struct GitUrl {
+pub struct GitUrl<P = GenericProvider>
+where
+    P: GitProvider<GitUrl, GitUrlParseError>,
+{
     /// The fully qualified domain name (FQDN) or IP of the repo
     #[builder(setter(into, strip_option), default)]
     host: Option<String>,
@@ -98,9 +101,12 @@ pub struct GitUrl {
     //pub scheme_prefix: bool,
     #[builder(default)]
     print_scheme: bool,
+
+    #[builder(setter(into, strip_option), default)]
+    provider: Option<P>,
 }
 
-impl GitUrlBuilder {
+impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     pub fn trim_auth(&mut self) {
         self.user = None;
         self.token = None;
@@ -197,7 +203,7 @@ impl GitUrlBuilder {
     fn parse_scheme(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
 
-        if let Ok((leftover, Some(s))) = GitUrlBuilder::_parse_scheme(working_url) {
+        if let Ok((leftover, Some(s))) = GitUrlBuilder::<P>::_parse_scheme(working_url) {
             println!("leftover: {leftover}, scheme: {s:?}");
 
             let scheme = Scheme::from_str(s).expect("Unknown scheme");
@@ -218,7 +224,7 @@ impl GitUrlBuilder {
 
     fn parse_auth_info(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
-        if let Ok((leftover, Some(username))) = GitUrlBuilder::_parse_username(working_url) {
+        if let Ok((leftover, Some(username))) = GitUrlBuilder::<P>::_parse_username(working_url) {
             println!("leftover: {leftover}, username: {username:?}");
             builder.user(username);
 
@@ -226,7 +232,7 @@ impl GitUrlBuilder {
                 *hint = GitUrlParseHint::Sshlike;
             }
 
-            if let Ok((token, Some(real_username))) = GitUrlBuilder::_parse_token(username) {
+            if let Ok((token, Some(real_username))) = GitUrlBuilder::<P>::_parse_token(username) {
                 println!("token: {token}, real_username: {real_username:?}");
                 builder.user(real_username);
                 builder.token(token);
@@ -245,13 +251,13 @@ impl GitUrlBuilder {
         let mut builder = self.clone();
         let mut save = working_url.clone();
 
-        if let Ok((leftover, Some(hostname))) = GitUrlBuilder::_parse_hostname(save) {
+        if let Ok((leftover, Some(hostname))) = GitUrlBuilder::<P>::_parse_hostname(save) {
             println!("leftover {leftover}, hostname: {hostname}");
             builder.host(hostname);
             save = leftover;
         }
 
-        if let Ok((leftover, Some(port))) = GitUrlBuilder::_parse_port(save) {
+        if let Ok((leftover, Some(port))) = GitUrlBuilder::<P>::_parse_port(save) {
             if !port.is_empty() {
                 println!("leftover {leftover}, port: {port}");
                 builder.port(u16::from_str(port).expect("Not a valid port"));
@@ -278,7 +284,7 @@ impl GitUrlBuilder {
     fn parse_ssh_path(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
 
-        if let Ok((_leftover, Some(path))) = GitUrlBuilder::_parse_ssh_path(working_url) {
+        if let Ok((_leftover, Some(path))) = GitUrlBuilder::<P>::_parse_ssh_path(working_url) {
             builder.scheme(Scheme::Ssh);
 
             *self = builder;
@@ -288,7 +294,7 @@ impl GitUrlBuilder {
 
     fn parse_path(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
-        if let Ok((leftover, path)) = GitUrlBuilder::_parse_path(working_url) {
+        if let Ok((leftover, path)) = GitUrlBuilder::<P>::_parse_path(working_url) {
             println!("leftover {leftover}, path: {path}");
 
             builder.path(path);
@@ -430,7 +436,7 @@ impl GitUrl {
 
     pub fn provider_info<T>(&self) -> Result<T, GitUrlParseError>
     where
-        T: GitProvider,
+        T: GitProvider<GitUrl, GitUrlParseError>,
     {
         T::from_git_url(&self)
         //Err(GitUrlParseError::UnexpectedFormat)

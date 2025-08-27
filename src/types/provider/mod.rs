@@ -12,14 +12,14 @@ use nom::{IResult, Parser, combinator::opt, combinator::rest};
 
 use crate::{GitUrl, GitUrlParseError};
 
-pub trait GitProvider: Clone + std::fmt::Debug {
-    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError>;
+pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
+    fn from_git_url(url: &T) -> Result<Self, E>;
     //fn get_url(&self, provider: &str
     //fn register(&self);
     //fn unregister(&self);o
-    fn to_obj(&self) -> Box<Self> {
-        Box::new(self.clone())
-    }
+    //fn to_obj(&self) -> Box<Self> {
+    //    Box::new(self.clone())
+    //}
 }
 
 // todo: builder
@@ -34,9 +34,11 @@ impl GenericProvider {
         let (n, _) = opt(tag("/")).parse(input)?;
         opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
     }
+
+    // fn _get_path_segment
 }
 
-impl GitProvider for GenericProvider {
+impl GitProvider<GitUrl, GitUrlParseError> for GenericProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
         if let (Ok((_, Some((user, repo)))), Some(host)) =
             (GenericProvider::_get_user_repo(url.path()), url.host())
