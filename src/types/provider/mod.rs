@@ -1,13 +1,5 @@
-// generic
-// gitlab (subgroups) style
-// azure devops
-
-use nom::branch::alt;
-use nom::bytes::complete::{is_not, tag, take_till, take_until, take_while};
-use nom::character::complete::{alphanumeric1, anychar, one_of};
-use nom::combinator::recognize;
-use nom::multi::many0;
-use nom::sequence::{preceded, separated_pair, terminated};
+use nom::bytes::complete::{is_not, tag};
+use nom::sequence::{separated_pair};
 use nom::{IResult, Parser, combinator::opt, combinator::rest};
 
 use derive_builder::Builder;
@@ -68,7 +60,6 @@ impl AzureDevOpsProvider {
         let (n, _) = opt(tag("/")).parse(input)?;
         opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
     }
-
 }
 
 impl GitProvider<GitUrl, GitUrlParseError> for AzureDevOpsProvider {
@@ -102,12 +93,11 @@ impl GitLabProvider {
         let (n, _) = opt(tag("/")).parse(input)?;
         opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
     }
-
 }
 
 impl GitProvider<GitUrl, GitUrlParseError> for GitLabProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((user, repo)))), Some(host)) =
+        if let (Ok((_, Some((_user, repo)))), Some(host)) =
             (GitLabProvider::_get_user_repo(url.path()), url.host())
         {
             Ok(GitLabProvider {

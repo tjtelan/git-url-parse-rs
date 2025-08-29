@@ -2,7 +2,7 @@ mod error;
 mod provider;
 
 pub use error::GitUrlParseError;
-pub use provider::{GenericProvider, GitProvider, AzureDevOpsProvider, GitLabProvider};
+pub use provider::{AzureDevOpsProvider, GenericProvider, GitLabProvider, GitProvider};
 
 use derive_builder::Builder;
 use getset::{Getters, Setters};
@@ -42,7 +42,6 @@ pub enum Scheme {
     Ssh,
     ///// Represents No url scheme
     //Unspecified,
-    ///
     Other(String), // todo: need test for this
 }
 
@@ -196,7 +195,6 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
 
         giturl.parse_path(&mut working_url, &mut hint);
 
-        println!("");
         Ok(giturl)
     }
 
@@ -281,7 +279,7 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
         *working_url = save;
     }
 
-    fn parse_ssh_path(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
+    fn parse_ssh_path(&mut self, working_url: &mut &str, _hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
 
         if let Ok((_leftover, Some(path))) = GitUrlBuilder::<P>::_parse_ssh_path(working_url) {
@@ -292,7 +290,7 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
         }
     }
 
-    fn parse_path(&mut self, working_url: &mut &str, hint: &mut GitUrlParseHint) {
+    fn parse_path(&mut self, working_url: &mut &str, _hint: &mut GitUrlParseHint) {
         let mut builder = self.clone();
         if let Ok((leftover, path)) = GitUrlBuilder::<P>::_parse_path(working_url) {
             println!("leftover {leftover}, path: {path}");
@@ -309,6 +307,8 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     fn _parse_scheme(input: &str) -> IResult<&str, Option<&str>> {
         opt(terminated(
             alt((
+
+                // Fancy: Can I build an iter map on this?
                 tag(Scheme::File.to_string().as_bytes()),
                 tag(Scheme::Ftps.to_string().as_bytes()),
                 tag(Scheme::Ftp.to_string().as_bytes()),
@@ -337,7 +337,7 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     }
 
     fn _parse_port(input: &str) -> IResult<&str, Option<&str>> {
-        opt(preceded(tag(":"), take_while(|c: char| c.is_digit(10)))).parse(input)
+        opt(preceded(tag(":"), take_while(|c: char| c.is_ascii_digit()))).parse(input)
     }
 
     // This is making an assumption that the path is relative, not absolute
@@ -355,9 +355,9 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
 impl fmt::Display for GitUrl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let scheme = if let Some(scheme) = &self.scheme()
-            && self.print_scheme().clone()
+            && *self.print_scheme()
         {
-            format!("{}://", scheme)
+            format!("{scheme}://")
         } else {
             String::new()
         };
@@ -385,7 +385,7 @@ impl fmt::Display for GitUrl {
         };
 
         let port = match &self.port() {
-            Some(p) => format!(":{}", p),
+            Some(p) => format!(":{p}", ),
             None => String::new(),
         };
 
@@ -405,7 +405,7 @@ impl fmt::Display for GitUrl {
 
         let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
 
-        write!(f, "{}", git_url_str)
+        write!(f, "{git_url_str}", )
     }
 }
 
@@ -438,7 +438,6 @@ impl GitUrl {
     where
         T: GitProvider<GitUrl, GitUrlParseError>,
     {
-        T::from_git_url(&self)
-        //Err(GitUrlParseError::UnexpectedFormat)
+        T::from_git_url(self)
     }
 }

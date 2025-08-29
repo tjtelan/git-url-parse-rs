@@ -7,7 +7,6 @@ use git_url_parse::*;
 // Codeberg
 // https://codeberg.org/explore/repos
 
-
 #[test]
 fn http_generic_git() {
     let test_url = "https://github.com/tjtelan/git-url-parse-rs.git";
@@ -170,9 +169,9 @@ fn ssh_gitlab_subgroups() {
 fn filepath() {
     let test_url = "file:///home/user/Documents/";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-    
+
     assert!(parsed.provider().is_none());
 
-    let provider_info: Result<GenericProvider, GitUrlParseError>  = parsed.provider_info();
+    let provider_info: Result<GenericProvider, GitUrlParseError> = parsed.provider_info();
     assert!(provider_info.is_err())
 }
