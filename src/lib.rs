@@ -1,7 +1,7 @@
 mod types;
 pub use types::{
     GenericProvider, GitProvider, GitUrl, GitUrlBuilder, GitUrlBuilderError, GitUrlParseError,
-    Scheme,
+    Scheme, AzureDevOpsProvider, GitLabProvider,
 };
 
 #[cfg(feature = "tracing")]
