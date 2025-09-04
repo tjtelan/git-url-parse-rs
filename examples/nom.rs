@@ -18,21 +18,31 @@ use nom::{
 };
 
 #[derive(Debug, Getters, Setters, Default)]
-struct GitUrl2 {
+struct GitUrl2<'a> {
     url: String,
+    scheme: Option<&'a str>,
 }
 
-impl GitUrl2 {
+impl<'a> GitUrl2<'a> {
     pub fn new(url: &str) -> Self {
         GitUrl2 {
             url: String::from(url),
+            ..Default::default()
         }
     }
 
     // https://datatracker.ietf.org/doc/html/rfc3986#appendix-A
 
-    pub fn parse<'a>(input: &'a str) -> IResult<&'a str, &'a str> {
+    pub fn parse(input: &'a str) -> IResult<&'a str, Self> {
+        let original = input;
         let (input, scheme) = Self::parse_scheme(input)?;
+
+        let scheme_slice = if let Some(scheme) = scheme {
+            if let Some(index) = original.find(scheme) {
+                //println!("scheme slice: {}", &original[index..(index+scheme.len())]);
+                Some(&original[index..(index+scheme.len())])
+            } else { None }
+        } else { None };
 
         // Eat the ':' when we have a scheme
         let (input, scheme) = if scheme.is_some() {
@@ -48,10 +58,10 @@ impl GitUrl2 {
         let (input, heir_part) = Self::parse_hier_part(scheme.is_some(), input)?;
         println!("heir_part: {heir_part:?}");
 
-        Ok((input, ""))
+        Ok((input, GitUrl2{ url: original.to_string(), scheme: scheme_slice}))
     }
 
-    pub fn parse_scheme<'a>(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_scheme(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
         let mut check = peek(pair(
             pair(
                 alpha1,
@@ -82,7 +92,7 @@ impl GitUrl2 {
         Ok((input, scheme))
     }
 
-    pub fn parse_hier_part<'a>(
+    pub fn parse_hier_part(
         scheme: bool,
         input: &'a str,
     ) -> IResult<&'a str, Option<&'a str>> {
@@ -111,7 +121,7 @@ impl GitUrl2 {
         Ok((input, Some(part)))
     }
 
-    pub fn parse_authority<'a>(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_authority(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
         let original = input;
 
         // Optional: username
@@ -153,7 +163,7 @@ impl GitUrl2 {
         Ok((input, authority))
     }
 
-    pub fn parse_userinfo<'a>(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_userinfo(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
         // Peek for username@
         let mut check = peek(pair(
             take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'),
@@ -182,13 +192,13 @@ impl GitUrl2 {
         Ok((authority_input, userinfo))
     }
 
-    pub fn parse_port<'a>(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_port(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
         opt(preceded(tag(":"), digit1)).parse(authority_input)
     }
 
     // This will get absolute paths.
     // todo: test for empty and start with "//"
-    pub fn path_abempty_parser<'a>(
+    pub fn path_abempty_parser(
     ) -> impl Parser<
         &'a str,
         Output = <dyn Parser<&'a str, Output = &'a str, Error = nom::error::Error<&'a str>> as Parser<
@@ -203,7 +213,7 @@ impl GitUrl2 {
         )))
     }
 
-    pub fn path_ssh_parser<'a>(
+    pub fn path_ssh_parser(
     ) -> impl Parser<
         &'a str,
         Output = <dyn Parser<&'a str, Output = &'a str, Error = nom::error::Error<&'a str>> as Parser<
@@ -234,7 +244,7 @@ impl GitUrl2 {
     //    )))
     //}
 
-    pub fn path_rootless_parser<'a>(
+    pub fn path_rootless_parser(
     ) -> impl Parser<
         &'a str,
         Output = <dyn Parser<&'a str, Output = &'a str, Error = nom::error::Error<&'a str>> as Parser<
