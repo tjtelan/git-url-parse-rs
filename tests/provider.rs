@@ -76,8 +76,8 @@ fn http_azure_devops() {
     let test_url = "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: AzureDevOpsProvider = parsed.provider_info().unwrap();
-    let expected = AzureDevOpsProvider {
+    let provider_info: types::AzureDevOpsProvider = parsed.provider_info().unwrap();
+    let expected = types::AzureDevOpsProvider {
         host: "dev.azure.com".to_string(),
         org: "CompanyName".to_string(),
         project: "ProjectName".to_string(),
@@ -91,8 +91,8 @@ fn ssh_azure_devops() {
     let test_url = "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: AzureDevOpsProvider = parsed.provider_info().unwrap();
-    let expected = AzureDevOpsProvider {
+    let provider_info: types::AzureDevOpsProvider = parsed.provider_info().unwrap();
+    let expected = types::AzureDevOpsProvider {
         host: "ssh.dev.azure.com".to_string(),
         org: "CompanyName".to_string(),
         project: "ProjectName".to_string(),
@@ -110,8 +110,8 @@ fn http_gitlab() {
     let test_url = "https://gitlab.com/gitlab-org/gitlab.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
-    let expected = GitLabProvider {
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
         host: "gitlab.com".to_string(),
         user: "gitlab-org".to_string(),
         subgroup: None,
@@ -125,8 +125,8 @@ fn ssh_gitlab() {
     let test_url = "git@gitlab.com:gitlab-org/gitlab.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
-    let expected = GitLabProvider {
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
         host: "gitlab.com".to_string(),
         user: "gitlab-org".to_string(),
         subgroup: None,
@@ -140,8 +140,8 @@ fn http_gitlab_subgroups() {
     let test_url = "https://gitlab.com/gitlab-org/sbom/systems/gitlab-core.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
-    let expected = GitLabProvider {
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
         host: "gitlab.com".to_string(),
         user: "gitlab-org".to_string(),
         subgroup: Some(vec!["sbom".to_string(), "systems".to_string()]),
@@ -155,8 +155,8 @@ fn ssh_gitlab_subgroups() {
     let test_url = "git@gitlab.com:gitlab-org/sbom/systems/gitlab-core.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
-    let expected = GitLabProvider {
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
         host: "gitlab.com".to_string(),
         user: "gitlab-org".to_string(),
         subgroup: Some(vec!["sbom".to_string(), "systems".to_string()]),

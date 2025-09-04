@@ -1,7 +1,8 @@
-mod types;
+pub mod types;
+
+// Re-exports
 pub use types::{
-    AzureDevOpsProvider, GenericProvider, GitLabProvider, GitProvider, GitUrl, GitUrlBuilder,
-    GitUrlBuilderError, GitUrlParseError, Scheme,
+    GenericProvider, GitProvider, GitUrl, GitUrlBuilder, GitUrlBuilderError, GitUrlParseError,
 };
 
 #[cfg(feature = "tracing")]

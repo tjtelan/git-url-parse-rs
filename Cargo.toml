@@ -13,8 +13,11 @@ version = "0.4.6"
 rust-version = "1.82"
 
 [features]
-default = []
+default = ["tracing"] # Do not keep tracing default
 tracing = ["dep:tracing"]
+#filepath
+#validate
+#provider
 
 [dependencies]
 tracing = { version = "0.1", optional = true }

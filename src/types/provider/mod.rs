@@ -1,5 +1,5 @@
 use nom::bytes::complete::{is_not, tag};
-use nom::sequence::{separated_pair};
+use nom::sequence::separated_pair;
 use nom::{IResult, Parser, combinator::opt, combinator::rest};
 
 use derive_builder::Builder;
@@ -20,8 +20,8 @@ pub struct GenericProvider {
 }
 impl GenericProvider {
     fn _get_owner_repo(input: &str) -> IResult<&str, Option<(&str, &str)>> {
-        let (n, _) = opt(tag("/")).parse(input)?;
-        opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
+        let (input, _) = opt(tag("/")).parse(input)?;
+        opt(separated_pair(is_not("/"), tag("/"), rest)).parse(input)
     }
 
     // todo
@@ -32,9 +32,10 @@ impl GenericProvider {
 
 impl GitProvider<GitUrl, GitUrlParseError> for GenericProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((user, repo)))), Some(host)) =
-            (GenericProvider::_get_owner_repo(url.path()), url.host())
-        {
+        if let (Ok((_, Some((user, repo)))), Some(host)) = (
+            GenericProvider::_get_owner_repo(url.path().as_str()),
+            url.host(),
+        ) {
             Ok(GenericProvider {
                 host: host.clone(),
                 owner: String::from(user),
@@ -64,9 +65,10 @@ impl AzureDevOpsProvider {
 
 impl GitProvider<GitUrl, GitUrlParseError> for AzureDevOpsProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((user, repo)))), Some(host)) =
-            (AzureDevOpsProvider::_get_user_repo(url.path()), url.host())
-        {
+        if let (Ok((_, Some((user, repo)))), Some(host)) = (
+            AzureDevOpsProvider::_get_user_repo(url.path().as_str()),
+            url.host(),
+        ) {
             Ok(AzureDevOpsProvider {
                 host: host.clone(),
                 org: String::from(""),
@@ -97,9 +99,10 @@ impl GitLabProvider {
 
 impl GitProvider<GitUrl, GitUrlParseError> for GitLabProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((_user, repo)))), Some(host)) =
-            (GitLabProvider::_get_user_repo(url.path()), url.host())
-        {
+        if let (Ok((_, Some((_user, repo)))), Some(host)) = (
+            GitLabProvider::_get_user_repo(url.path().as_str()),
+            url.host(),
+        ) {
             Ok(GitLabProvider {
                 host: host.clone(),
                 user: String::from(""),

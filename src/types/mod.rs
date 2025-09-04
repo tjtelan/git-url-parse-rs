@@ -4,25 +4,27 @@ mod provider;
 pub use error::GitUrlParseError;
 pub use provider::{AzureDevOpsProvider, GenericProvider, GitLabProvider, GitProvider};
 
-use derive_builder::Builder;
-use getset::{Getters, Setters};
-use strum::{Display, EnumString, VariantNames};
-
 use core::str;
 use std::fmt;
 use std::str::FromStr;
-//use url::Url;
 
+use derive_builder::Builder;
+use getset::{Getters, Setters};
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_till, take_until, take_while};
 use nom::character::complete::one_of;
 use nom::sequence::{preceded, terminated};
 use nom::{IResult, Parser, combinator::opt, combinator::rest};
+use strum::{Display, EnumString, VariantNames};
+#[cfg(feature = "tracing")]
+use tracing::debug;
+use typed_path::{Utf8TypedPath, Utf8TypedPathBuf};
 
+// todo: let's get rid of this
 /// Supported uri schemes for parsing
 #[derive(Debug, PartialEq, Eq, EnumString, VariantNames, Clone, Display)]
 #[strum(serialize_all = "kebab_case")]
-pub enum Scheme {
+pub(crate) enum Scheme {
     /// Represents `file://` url scheme
     File,
     /// Represents `ftp://` url scheme
@@ -52,55 +54,43 @@ pub(crate) enum GitUrlParseHint {
     Sshlike,
     Filelike,
     Httplike,
-    //Custom // needed?
 }
 
 /// GitUrl represents an input url that is a url used by git
 /// Internally during parsing the url is sanitized and uses the `url` crate to perform
 /// the majority of the parsing effort, and with some extra handling to expose
 /// metadata used my many git hosting services
-#[derive(Debug, PartialEq, Eq, Clone, Builder, Default, Getters, Setters)]
+#[derive(Debug, PartialEq, Eq, Clone, Builder, Getters, Setters)]
 #[builder(build_fn(validate = "Self::prebuild_check"), field(public))]
 #[get = "pub"]
 pub struct GitUrl<P = GenericProvider>
 where
     P: GitProvider<GitUrl, GitUrlParseError>,
 {
-    /// The fully qualified domain name (FQDN) or IP of the repo
+    /// The host, domain or IP of the repo
     #[builder(setter(into, strip_option), default)]
     host: Option<String>,
-    ///// The name of the repo
-    //pub name: String,
-    ///// The owner/account/project name
-    //pub owner: Option<String>,
-    ///// The organization name. Supported by Azure DevOps
-    //pub organization: Option<String>,
-    ///// The full name of the repo, formatted as "owner/name"
-    //pub fullname: String,
-    ///// The git url scheme
+    /// The url scheme
     #[builder(setter(into, strip_option), default)]
     scheme: Option<Scheme>,
-    /// The authentication user
+    /// Authentication user
     #[builder(setter(into, strip_option), default)]
     #[getset(set = "pub(crate)")]
     user: Option<String>,
-    /// The oauth token (could appear in the https urls)
+    /// Authentication token (could appear in the https urls)
     #[builder(setter(into, strip_option), default)]
     #[getset(set = "pub(crate)")]
     token: Option<String>,
-    /// The non-conventional port where git service is hosted
+    /// The port where git service is hosted
     #[builder(setter(into, strip_option), default)]
     port: Option<u16>,
     /// The path to repo w/ respect to user + hostname
     #[builder(setter(into))]
-    path: String,
-    ///// Indicate if url uses the .git suffix
-    //pub git_suffix: bool,
-    ///// Indicate if url explicitly uses its scheme
-    //pub scheme_prefix: bool,
+    path: Utf8TypedPathBuf,
+    /// Include scheme:// when printing url
     #[builder(default)]
     print_scheme: bool,
-
+    /// Hosted git provider info derived from GitUrl
     #[builder(setter(into, strip_option), default)]
     provider: Option<P>,
 }
@@ -112,8 +102,8 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     }
 
     fn prebuild_check(&self) -> Result<(), String> {
-        #[cfg(feature = "tracing")]
-        debug!("Processing: {:?}", &url);
+        //#[cfg(feature = "tracing")]
+        //debug!("Processing: {:?}", &url);
 
         // Error if there are null bytes within the url
 
@@ -155,10 +145,10 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
         }
 
         if let Some(path) = &self.path {
-            if path.contains('\0') {
+            if path.as_str().contains('\0') {
                 return Err(GitUrlParseError::FoundNullBytes.to_string());
             }
-            if path.is_empty() {
+            if path.as_str().is_empty() {
                 return Err(
                     GitUrlParseError::UnexpectedEmptyValue(String::from("path")).to_string()
                 );
@@ -169,7 +159,7 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     }
 
     fn parse(url: &str) -> Result<Self, GitUrlParseError> {
-        println!("start: {url}");
+        debug!("{url}");
         let mut giturl = GitUrlBuilder::default();
         let mut working_url = url;
         let mut hint = GitUrlParseHint::default();
@@ -181,9 +171,14 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
         giturl.parse_host_port(&mut working_url, &mut hint);
 
         match hint {
-            GitUrlParseHint::Httplike => {}
+            GitUrlParseHint::Httplike => {
+                if working_url.starts_with(":") && giturl.port.is_none() {
+                    return Err(GitUrlParseError::UnexpectedFormat);
+                } else {
+                    println!("Nothing wrong here: {working_url}");
+                }
+            }
             GitUrlParseHint::Sshlike => {
-                //working_url = giturl.parse_ssh_path(&working_url);
                 giturl.parse_ssh_path(&mut working_url, &mut hint);
             }
             GitUrlParseHint::Filelike | GitUrlParseHint::Unknown => {
@@ -295,7 +290,8 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
         if let Ok((leftover, path)) = GitUrlBuilder::<P>::_parse_path(working_url) {
             println!("leftover {leftover}, path: {path}");
 
-            builder.path(path);
+            let parsed_path = Utf8TypedPath::derive(path).to_path_buf();
+            builder.path(parsed_path);
 
             *self = builder;
             *working_url = leftover;
@@ -307,7 +303,6 @@ impl<P: GitProvider<GitUrl, GitUrlParseError>> GitUrlBuilder<P> {
     fn _parse_scheme(input: &str) -> IResult<&str, Option<&str>> {
         opt(terminated(
             alt((
-
                 // Fancy: Can I build an iter map on this?
                 tag(Scheme::File.to_string().as_bytes()),
                 tag(Scheme::Ftps.to_string().as_bytes()),
@@ -385,13 +380,13 @@ impl fmt::Display for GitUrl {
         };
 
         let port = match &self.port() {
-            Some(p) => format!(":{p}", ),
+            Some(p) => format!(":{p}",),
             None => String::new(),
         };
 
         let path = if self.scheme().clone() == Some(Scheme::Ssh) {
             if self.port().is_some() {
-                if !self.path().starts_with('/') {
+                if !self.path().as_str().starts_with('/') {
                     format!("/{}", &self.path())
                 } else {
                     self.path().to_string()
@@ -405,7 +400,7 @@ impl fmt::Display for GitUrl {
 
         let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
 
-        write!(f, "{git_url_str}", )
+        write!(f, "{git_url_str}",)
     }
 }
 

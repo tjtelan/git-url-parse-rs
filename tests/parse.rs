@@ -4,7 +4,7 @@ fn ssh_user_ports() {
     let test_url = "ssh://git@host.tld:9999/user/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrlBuilder::default()
-        .scheme(Scheme::Ssh)
+        .scheme("ssh".into())
         .host("host.tld")
         .user("git")
         .port(9999 as u16)
@@ -209,7 +209,7 @@ fn absolute_unix_path() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrlBuilder::default()
         .scheme(Scheme::File)
-        .path("/path/to/project-name.git")
+        .path(test_url)
         .build()
         .unwrap();
 
@@ -219,11 +219,11 @@ fn absolute_unix_path() {
 // Issue #6 - Relative Windows paths will parse into Unix paths
 #[test]
 fn relative_windows_path() {
-    let test_url = "..\\project-name.git";
+    let test_url = r"..\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrlBuilder::default()
         .scheme(Scheme::File)
-        .path("../project-name.git")
+        .path(test_url)
         .build()
         .unwrap();
 
@@ -235,11 +235,11 @@ fn relative_windows_path() {
 #[should_panic(expected = "URL parse failed: UnexpectedFormat")]
 #[test]
 fn absolute_windows_path() {
-    let test_url = "c:\\project-name.git";
+    let test_url = r"c:\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let expected = GitUrlBuilder::default()
         .scheme(Scheme::File)
-        .path("c:\\project-name.git")
+        .path(test_url)
         .build()
         .unwrap();
 
