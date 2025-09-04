@@ -1,12 +1,13 @@
-use std::borrow::Cow;
 use getset::{Getters, Setters};
 use git_url_parse::{GitUrl, GitUrlParseError};
+use nom::FindSubstring;
 use nom::bits::complete::take;
 use nom::bytes::complete::{is_a, take_while};
 use nom::character::complete::{digit1, one_of};
 use nom::combinator::{opt, peek};
+use nom::error::context;
 use nom::multi::{many0, many1};
-use nom::sequence::preceded;
+use nom::sequence::{preceded, terminated};
 use nom::{
     IResult, Parser,
     branch::alt,
@@ -16,6 +17,7 @@ use nom::{
     multi::many0_count,
     sequence::{pair, separated_pair},
 };
+use std::borrow::Cow;
 
 #[derive(Debug, Getters, Setters, Default)]
 struct GitUrl2<'a> {
@@ -35,30 +37,40 @@ impl<'a> GitUrl2<'a> {
 
     pub fn parse(input: &'a str) -> IResult<&'a str, Self> {
         let original = input;
-        let (input, scheme) = Self::parse_scheme(input)?;
+        let (input, scheme) = Self::parse_scheme.parse(input)?;
 
         let scheme_slice = if let Some(scheme) = scheme {
-            if let Some(index) = original.find(scheme) {
+            if let Some(index) = original.find_substring(scheme) {
                 //println!("scheme slice: {}", &original[index..(index+scheme.len())]);
-                Some(&original[index..(index+scheme.len())])
-            } else { None }
-        } else { None };
+                Some(&original[index..(index + scheme.len())])
+            } else {
+                None
+            }
+        } else {
+            None
+        };
 
         // Eat the ':' when we have a scheme
-        let (input, scheme) = if scheme.is_some() {
-            let (input, _) = tag(":")(input)?;
-            //self.scheme = Cow::Borrowed(&scheme);
-            (input, scheme)
-        } else {
-            (input, None)
-        };
+        //let (input, scheme) = if scheme.is_some() {
+        //    let (input, _) = tag(":")(input)?;
+        //    //self.scheme = Cow::Borrowed(&scheme);
+        //    (input, scheme)
+        //} else {
+        //    (input, None)
+        //};
 
         println!("scheme: {scheme:?}");
 
         let (input, heir_part) = Self::parse_hier_part(scheme.is_some(), input)?;
         println!("heir_part: {heir_part:?}");
 
-        Ok((input, GitUrl2{ url: original.to_string(), scheme: scheme_slice}))
+        Ok((
+            input,
+            GitUrl2 {
+                url: original.to_string(),
+                scheme: scheme_slice,
+            },
+        ))
     }
 
     pub fn parse_scheme(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
@@ -81,33 +93,42 @@ impl<'a> GitUrl2<'a> {
         }
 
         // Must start with alpha character, then alpha/digit/+/-/.
-        let (input, scheme) = opt(recognize(pair(
-            alpha1,
-            take_while(|c: char| {
-                c.is_ascii_alphabetic() || c.is_ascii_digit() || c == '+' || c == '-' || c == '.'
-            }),
-        )))
-        .parse(input)?;
+        //let (input, scheme) = opt(recognize(pair(
+        context(
+            "Scheme parse",
+            opt(terminated(
+                recognize(pair(
+                    alpha1,
+                    take_while(|c: char| {
+                        c.is_ascii_alphabetic()
+                            || c.is_ascii_digit()
+                            || c == '+'
+                            || c == '-'
+                            || c == '.'
+                    }),
+                )),
+                tag(":"),
+            )),
+        )
+        //.parse(input)?;
+        .parse(input)
 
-        Ok((input, scheme))
+        //Ok((input, scheme))
     }
 
-    pub fn parse_hier_part(
-        scheme: bool,
-        input: &'a str,
-    ) -> IResult<&'a str, Option<&'a str>> {
-        let input = if scheme {
-            let (input, _) = tag("//")(input)?;
-            input
-        } else {
-            input
-        };
+    pub fn parse_hier_part(scheme: bool, input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+        //let input = if scheme {
+        //    let (input, _) = tag("//")(input)?;
+        //    input
+        //} else {
+        //    input
+        //};
 
         let (input, authority) = Self::parse_authority(input)?;
         println!("authority: {authority:?}");
         //let (input, part) = self.path_abempty(input);
         let (input, part) = alt((
-            Self::path_abempty_parser(),
+            preceded(tag("//"), Self::path_abempty_parser()),
             Self::path_rootless_parser(),
             Self::path_ssh_parser(),
         ))
@@ -205,7 +226,7 @@ impl<'a> GitUrl2<'a> {
             &'a str,
         >>::Output,
         Error = nom::error::Error<&'a str>,
-    > {
+    >{
         // Starts with '/' or empty
         recognize(many1(pair(
             tag("/"),
@@ -220,7 +241,7 @@ impl<'a> GitUrl2<'a> {
             &'a str,
         >>::Output,
         Error = nom::error::Error<&'a str>,
-    > {
+    >{
         recognize((
             tag(":"),
             take_while(|c: char| pchar_uri_chars(c)),
@@ -251,7 +272,7 @@ impl<'a> GitUrl2<'a> {
             &'a str,
         >>::Output,
         Error = nom::error::Error<&'a str>,
-    > {
+    >{
         recognize(pair(
             take_while(|c: char| pchar_uri_chars(c)),
             many0(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
