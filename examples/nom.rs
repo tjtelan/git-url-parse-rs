@@ -18,11 +18,17 @@ use nom::{
     sequence::{pair, separated_pair},
 };
 use std::borrow::Cow;
+use std::path;
 
 #[derive(Debug, Getters, Setters, Default)]
 struct GitUrl2<'a> {
     url: String,
     scheme: Option<&'a str>,
+    user: Option<&'a str>,
+    token: Option<&'a str>,
+    host: Option<&'a str>,
+    port: Option<&'a str>,
+    path: Option<&'a str>,
 }
 
 impl<'a> GitUrl2<'a> {
@@ -39,16 +45,7 @@ impl<'a> GitUrl2<'a> {
         let original = input;
         let (input, scheme) = Self::parse_scheme.parse(input)?;
 
-        let scheme_slice = if let Some(scheme) = scheme {
-            if let Some(index) = original.find_substring(scheme) {
-                //println!("scheme slice: {}", &original[index..(index+scheme.len())]);
-                Some(&original[index..(index + scheme.len())])
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+        let scheme_slice = as_slice_bounds(original, scheme);
 
         // Eat the ':' when we have a scheme
         //let (input, scheme) = if scheme.is_some() {
@@ -59,34 +56,53 @@ impl<'a> GitUrl2<'a> {
         //    (input, None)
         //};
 
-        println!("scheme: {scheme:?}");
+        //println!("scheme: {scheme:?}");
 
-        let (input, heir_part) = Self::parse_hier_part(scheme.is_some(), input)?;
-        println!("heir_part: {heir_part:?}");
+        let (input, heir_part) = Self::parse_hier_part(input)?;
+
+        let (user_opt, token_opt) = heir_part.0.0;
+        let (host_opt) = heir_part.0.1;
+        let (port_opt) = heir_part.0.2;
+        let (path_opt) = heir_part.1;
+
+        let user_slice = as_slice_bounds(original, user_opt);
+        let token_slice = as_slice_bounds(original, token_opt);
+        let host_slice = as_slice_bounds(original, host_opt);
+        let port_slice = as_slice_bounds(original, port_opt);
+        let path_slice = as_slice_bounds(original, path_opt);
+        //println!("heir_part: {heir_part:?}");
 
         Ok((
             input,
             GitUrl2 {
                 url: original.to_string(),
                 scheme: scheme_slice,
+                user: user_slice,
+                token: token_slice,
+                host: host_slice,
+                port: port_slice,
+                path: path_slice,
             },
         ))
     }
 
     pub fn parse_scheme(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
-        let mut check = peek(pair(
-            pair(
-                alpha1,
-                take_while(|c: char| {
-                    c.is_ascii_alphabetic()
-                        || c.is_ascii_digit()
-                        || c == '+'
-                        || c == '-'
-                        || c == '.'
-                }),
-            ),
-            tag::<&str, &str, nom::error::Error<&str>>("://"),
-        ));
+        let mut check = context(
+            "scheme validate",
+            peek(pair(
+                pair(
+                    alpha1,
+                    take_while(|c: char| {
+                        c.is_ascii_alphabetic()
+                            || c.is_ascii_digit()
+                            || c == '+'
+                            || c == '-'
+                            || c == '.'
+                    }),
+                ),
+                tag::<&str, &str, nom::error::Error<&str>>("://"),
+            )),
+        );
 
         if check.parse(input).is_err() {
             return Ok((input, None));
@@ -107,7 +123,8 @@ impl<'a> GitUrl2<'a> {
                             || c == '.'
                     }),
                 )),
-                tag(":"),
+                // We consume the "://" here to allow scheme to be optional
+                tag("://"),
             )),
         )
         //.parse(input)?;
@@ -116,7 +133,8 @@ impl<'a> GitUrl2<'a> {
         //Ok((input, scheme))
     }
 
-    pub fn parse_hier_part(scheme: bool, input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    //pub fn parse_hier_part(scheme: bool, input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_hier_part(input: &'a str) -> IResult<&'a str, (((Option<&str>, Option<&str>), Option<&str>, Option<&str>),Option<&'a str>)> {
         //let input = if scheme {
         //    let (input, _) = tag("//")(input)?;
         //    input
@@ -125,7 +143,7 @@ impl<'a> GitUrl2<'a> {
         //};
 
         let (input, authority) = Self::parse_authority(input)?;
-        println!("authority: {authority:?}");
+        //println!("authority: {authority:?}");
         //let (input, part) = self.path_abempty(input);
         let (input, part) = alt((
             preceded(tag("//"), Self::path_abempty_parser()),
@@ -139,52 +157,39 @@ impl<'a> GitUrl2<'a> {
         //          / path-rootless
         //          / path-empty
 
-        Ok((input, Some(part)))
+        Ok((input, (authority, Some(part))))
     }
 
-    pub fn parse_authority(input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_authority(input: &'a str) -> IResult<&'a str, ((Option<&str>, Option<&str>), Option<&str>, Option<&str>)> {
         let original = input;
 
-        // Optional: username
-        let (input, username) = Self::parse_userinfo(input)?;
-
-        if let Some(userinfo) = username {
-            if userinfo.contains(":") {
-                let (_, (user, token)) = separated_pair(
-                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
-                    tag(":"),
-                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
-                )
-                .parse(userinfo)?;
-                println!("user: {user:?}");
-                println!("token: {token:?}");
-            } else {
-                println!("user: {userinfo:?}");
-            }
-        }
+        // Optional: username / token
+        let (input, userinfo) = Self::parse_userinfo(input)?;
 
         // Host
-        let (input, authority) =
+        let (input, host) =
             opt(recognize(take_while(|c: char| reg_name_uri_chars(c)))).parse(input)?;
 
         // Verify if found host is more than symbols
-        if let Some(host) = authority {
+        if let Some(host) = host {
             let is_alphanum = host.chars().into_iter().find(|c| is_alphanum(*c)).is_some();
             if !is_alphanum {
-                return Ok((original, None));
+                return Ok((original, ((None, None), None, None)));
             }
         }
 
         // Optional: port
         let (input, port) = Self::parse_port(input)?;
         if let Some(port) = port {
-            println!("port: {port:?}");
+            //println!("port: {port:?}");
         }
 
-        Ok((input, authority))
+        Ok((input, (userinfo, host, port)))
     }
 
-    pub fn parse_userinfo(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
+    pub fn parse_userinfo(
+        authority_input: &'a str,
+    ) -> IResult<&'a str, (Option<&'a str>, Option<&'a str>)> {
         // Peek for username@
         let mut check = peek(pair(
             take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'),
@@ -192,7 +197,7 @@ impl<'a> GitUrl2<'a> {
         ));
 
         if check.parse(authority_input).is_err() {
-            return Ok((authority_input, None));
+            return Ok((authority_input, (None, None)));
         }
 
         // Username
@@ -210,7 +215,26 @@ impl<'a> GitUrl2<'a> {
 
         // Should I parse token in here?
 
-        Ok((authority_input, userinfo))
+        let (user, token) = if let Some(userinfo) = userinfo {
+            if userinfo.contains(":") {
+                let (_, (user, token)) = separated_pair(
+                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                    tag(":"),
+                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                )
+                .parse(userinfo)?;
+                //println!("user: {user:?}");
+                //println!("token: {token:?}");
+                (Some(user), Some(token))
+            } else {
+                //println!("user: {userinfo:?}");
+                (Some(userinfo), None)
+            }
+        } else {
+            (None, None)
+        };
+
+        Ok((authority_input, (user, token)))
     }
 
     pub fn parse_port(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
@@ -277,6 +301,19 @@ impl<'a> GitUrl2<'a> {
             take_while(|c: char| pchar_uri_chars(c)),
             many0(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
         ))
+    }
+}
+
+fn as_slice_bounds<'a>(original: &'a str, field: Option<&'a str>) -> Option<&'a str> {
+    if let Some(field) = field {
+        if let Some(index) = original.find_substring(field) {
+            //println!("scheme slice: {}", &original[index..(index+scheme.len())]);
+            Some(&original[index..(index + field.len())])
+        } else {
+            None
+        }
+    } else {
+        None
     }
 }
 
