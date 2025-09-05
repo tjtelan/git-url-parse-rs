@@ -1,10 +1,9 @@
 use getset::{Getters, Setters};
 use git_url_parse::{GitUrl, GitUrlParseError};
 use nom::FindSubstring;
-use nom::bits::complete::take;
 use nom::bytes::complete::{is_a, take_while};
 use nom::character::complete::{digit1, one_of};
-use nom::combinator::{opt, peek};
+use nom::combinator::{opt, peek, verify};
 use nom::error::context;
 use nom::multi::{many0, many1};
 use nom::sequence::{preceded, terminated};
@@ -12,13 +11,10 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric1},
-    combinator::{consumed, recognize},
-    multi::many0_count,
+    character::complete::alpha1,
+    combinator::recognize,
     sequence::{pair, separated_pair},
 };
-use std::borrow::Cow;
-use std::path;
 
 #[derive(Debug, Getters, Setters, Default)]
 struct GitUrl2<'a> {
@@ -32,32 +28,19 @@ struct GitUrl2<'a> {
 }
 
 impl<'a> GitUrl2<'a> {
-    pub fn new(url: &str) -> Self {
-        GitUrl2 {
-            url: String::from(url),
-            ..Default::default()
-        }
-    }
-
-    // https://datatracker.ietf.org/doc/html/rfc3986#appendix-A
-
+    // https://datatracker.ietf.org/doc/html/rfc3986
+    // Based on rfc3986, but does not strictly cover the spec
+    // * No support for:
+    //     * query, fragment, percent-encoding, and much of the edges for path support
+    //     * many forms of ip representations like ipv6, hexdigits
+    // * Added support for:
+    //     * parsing ssh git urls which use ":" as a delimiter between the authority and path
+    //     * parsing userinfo into user:token (but its officially deprecated, per #section-3.2.1)
+    //     * some limited support for windows/linux filepaths
     pub fn parse(input: &'a str) -> IResult<&'a str, Self> {
         let original = input;
+
         let (input, scheme) = Self::parse_scheme.parse(input)?;
-
-        let scheme_slice = as_slice_bounds(original, scheme);
-
-        // Eat the ':' when we have a scheme
-        //let (input, scheme) = if scheme.is_some() {
-        //    let (input, _) = tag(":")(input)?;
-        //    //self.scheme = Cow::Borrowed(&scheme);
-        //    (input, scheme)
-        //} else {
-        //    (input, None)
-        //};
-
-        //println!("scheme: {scheme:?}");
-
         let (input, heir_part) = Self::parse_hier_part(input)?;
 
         let (user_opt, token_opt) = heir_part.0.0;
@@ -65,23 +48,16 @@ impl<'a> GitUrl2<'a> {
         let (port_opt) = heir_part.0.2;
         let (path_opt) = heir_part.1;
 
-        let user_slice = as_slice_bounds(original, user_opt);
-        let token_slice = as_slice_bounds(original, token_opt);
-        let host_slice = as_slice_bounds(original, host_opt);
-        let port_slice = as_slice_bounds(original, port_opt);
-        let path_slice = as_slice_bounds(original, path_opt);
-        //println!("heir_part: {heir_part:?}");
-
         Ok((
             input,
             GitUrl2 {
                 url: original.to_string(),
-                scheme: scheme_slice,
-                user: user_slice,
-                token: token_slice,
-                host: host_slice,
-                port: port_slice,
-                path: path_slice,
+                scheme,
+                user: user_opt,
+                token: token_opt,
+                host: host_opt,
+                port: port_opt,
+                path: path_opt,
             },
         ))
     }
@@ -109,7 +85,6 @@ impl<'a> GitUrl2<'a> {
         }
 
         // Must start with alpha character, then alpha/digit/+/-/.
-        //let (input, scheme) = opt(recognize(pair(
         context(
             "Scheme parse",
             opt(terminated(
@@ -123,66 +98,68 @@ impl<'a> GitUrl2<'a> {
                             || c == '.'
                     }),
                 )),
-                // We consume the "://" here to allow scheme to be optional
+                // Not part of spec. We consume the "://" here to more easily manage scheme to be optional
                 tag("://"),
             )),
         )
-        //.parse(input)?;
         .parse(input)
-
-        //Ok((input, scheme))
     }
 
-    //pub fn parse_hier_part(scheme: bool, input: &'a str) -> IResult<&'a str, Option<&'a str>> {
-    pub fn parse_hier_part(input: &'a str) -> IResult<&'a str, (((Option<&str>, Option<&str>), Option<&str>, Option<&str>),Option<&'a str>)> {
-        //let input = if scheme {
-        //    let (input, _) = tag("//")(input)?;
-        //    input
-        //} else {
-        //    input
-        //};
-
+    // https://datatracker.ietf.org/doc/html/rfc3986#section-3.2
+    // The rfc says parsing the "//" part of the uri belongs to the hier-part parsing
+    // but we only support common internet protocols, file paths, but not other "baseless" ones
+    // so it is sensible for this move it with scheme parsing to support git user service urls
+    pub fn parse_hier_part(
+        input: &'a str,
+    ) -> IResult<
+        &'a str,
+        (
+            ((Option<&str>, Option<&str>), Option<&str>, Option<&str>),
+            Option<&'a str>,
+        ),
+    > {
         let (input, authority) = Self::parse_authority(input)?;
         //println!("authority: {authority:?}");
-        //let (input, part) = self.path_abempty(input);
-        let (input, part) = alt((
-            preceded(tag("//"), Self::path_abempty_parser()),
-            Self::path_rootless_parser(),
-            Self::path_ssh_parser(),
-        ))
-        .parse(input)?;
-        //alt((self.path_ssh_parser(), self.path_abempty_parser())).parse(input)?;
 
-        //          / path-absolute
-        //          / path-rootless
-        //          / path-empty
+        let (input, part) = context(
+            "Top of path parsers",
+            alt((
+                //preceded(tag("//"), Self::path_abempty_parser()),
+                Self::path_abempty_parser(),
+                Self::path_rootless_parser(),
+                Self::path_ssh_parser(),
+            )),
+        )
+        .parse(input)?;
 
         Ok((input, (authority, Some(part))))
     }
 
-    pub fn parse_authority(input: &'a str) -> IResult<&'a str, ((Option<&str>, Option<&str>), Option<&str>, Option<&str>)> {
+    pub fn parse_authority(
+        input: &'a str,
+    ) -> IResult<&'a str, ((Option<&str>, Option<&str>), Option<&str>, Option<&str>)> {
         let original = input;
 
         // Optional: username / token
         let (input, userinfo) = Self::parse_userinfo(input)?;
 
         // Host
-        let (input, host) =
-            opt(recognize(take_while(|c: char| reg_name_uri_chars(c)))).parse(input)?;
+        let (input, host) = context(
+            "Host parser",
+            opt(verify(
+                recognize(take_while(|c: char| reg_name_uri_chars(c))),
+                |s: &str| {
+                    let has_alphanum = s.chars().into_iter().find(|c| is_alphanum(*c)).is_some();
+                    let starts_with_alphanum = s.chars().next().is_some_and(|c| is_alphanum(c));
 
-        // Verify if found host is more than symbols
-        if let Some(host) = host {
-            let is_alphanum = host.chars().into_iter().find(|c| is_alphanum(*c)).is_some();
-            if !is_alphanum {
-                return Ok((original, ((None, None), None, None)));
-            }
-        }
+                    has_alphanum && starts_with_alphanum
+                },
+            )),
+        )
+        .parse(input)?;
 
         // Optional: port
         let (input, port) = Self::parse_port(input)?;
-        if let Some(port) = port {
-            //println!("port: {port:?}");
-        }
 
         Ok((input, (userinfo, host, port)))
     }
@@ -191,43 +168,48 @@ impl<'a> GitUrl2<'a> {
         authority_input: &'a str,
     ) -> IResult<&'a str, (Option<&'a str>, Option<&'a str>)> {
         // Peek for username@
-        let mut check = peek(pair(
-            take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'),
-            tag::<&str, &str, nom::error::Error<&str>>("@"),
-        ));
+        let mut check = context(
+            "Userinfo validation",
+            peek(pair(
+                take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'),
+                tag::<&str, &str, nom::error::Error<&str>>("@"),
+            )),
+        );
 
         if check.parse(authority_input).is_err() {
             return Ok((authority_input, (None, None)));
         }
 
-        // Username
-        let (authority_input, userinfo) = opt(recognize(take_while(|c: char| {
-            unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'
-        })))
+        // Userinfo
+        let (authority_input, userinfo) = context(
+            "Userinfo parser",
+            opt(recognize(take_while(|c: char| {
+                unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'
+            }))),
+        )
         .parse(authority_input)?;
 
         let (authority_input, _) = if userinfo.is_some() {
-            tag("@")(authority_input)?
+            context("Userinfo '@' parser", tag("@")).parse(authority_input)?
         } else {
             // No change to input, but let the compiler be happy
             (authority_input, authority_input)
         };
 
-        // Should I parse token in here?
-
+        // Break down userinfo into user and token
         let (user, token) = if let Some(userinfo) = userinfo {
             if userinfo.contains(":") {
-                let (_, (user, token)) = separated_pair(
-                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
-                    tag(":"),
-                    take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                let (_, (user, token)) = context(
+                    "Userinfo with colon parser",
+                    separated_pair(
+                        take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                        tag(":"),
+                        take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                    ),
                 )
                 .parse(userinfo)?;
-                //println!("user: {user:?}");
-                //println!("token: {token:?}");
                 (Some(user), Some(token))
             } else {
-                //println!("user: {userinfo:?}");
                 (Some(userinfo), None)
             }
         } else {
@@ -238,7 +220,7 @@ impl<'a> GitUrl2<'a> {
     }
 
     pub fn parse_port(authority_input: &'a str) -> IResult<&'a str, Option<&'a str>> {
-        opt(preceded(tag(":"), digit1)).parse(authority_input)
+        context("Port parser", opt(preceded(tag(":"), digit1))).parse(authority_input)
     }
 
     // This will get absolute paths.
@@ -252,10 +234,13 @@ impl<'a> GitUrl2<'a> {
         Error = nom::error::Error<&'a str>,
     >{
         // Starts with '/' or empty
-        recognize(many1(pair(
-            tag("/"),
-            take_while(|c: char| pchar_uri_chars(c)),
-        )))
+        context(
+            "Path parser (abempty)",
+            recognize(many1(pair(
+                tag("/"),
+                take_while(|c: char| pchar_uri_chars(c)),
+            ))),
+        )
     }
 
     pub fn path_ssh_parser(
@@ -266,28 +251,15 @@ impl<'a> GitUrl2<'a> {
         >>::Output,
         Error = nom::error::Error<&'a str>,
     >{
-        recognize((
-            tag(":"),
-            take_while(|c: char| pchar_uri_chars(c)),
-            many1(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
-        ))
+        context(
+            "Path parser (ssh)",
+            recognize((
+                tag(":"),
+                take_while(|c: char| pchar_uri_chars(c)),
+                many1(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
+            )),
+        )
     }
-
-    //pub fn path_absolute_parser<'a>(
-    //    &self,
-    //) -> impl Parser<
-    //    &str,
-    //    Output = <dyn Parser<&str, Output = &str, Error = nom::error::Error<&str>> as Parser<
-    //        &str,
-    //    >>::Output,
-    //    Error = nom::error::Error<&str>,
-    //> {
-    //    // Starts with '/' but not "//"
-    //    recognize(many1(pair(
-    //        tag("/"),
-    //        take_while(|c: char| pchar_uri_chars(c)),
-    //    )))
-    //}
 
     pub fn path_rootless_parser(
     ) -> impl Parser<
@@ -297,23 +269,13 @@ impl<'a> GitUrl2<'a> {
         >>::Output,
         Error = nom::error::Error<&'a str>,
     >{
-        recognize(pair(
-            take_while(|c: char| pchar_uri_chars(c)),
-            many0(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
-        ))
-    }
-}
-
-fn as_slice_bounds<'a>(original: &'a str, field: Option<&'a str>) -> Option<&'a str> {
-    if let Some(field) = field {
-        if let Some(index) = original.find_substring(field) {
-            //println!("scheme slice: {}", &original[index..(index+scheme.len())]);
-            Some(&original[index..(index + field.len())])
-        } else {
-            None
-        }
-    } else {
-        None
+        context(
+            "Path parser (rootless)",
+            recognize(pair(
+                take_while(|c: char| pchar_uri_chars(c)),
+                many0(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
+            )),
+        )
     }
 }
 
@@ -323,7 +285,7 @@ fn pchar_uri_chars(c: char) -> bool {
 }
 
 fn reg_name_uri_chars(c: char) -> bool {
-    // *( unreserved / pct-encoded / sub-delims )
+    // *( unreserved / pct-encoded (not implemented) / sub-delims )
     unreserved_uri_chars(c) || subdelims_uri_chars(c)
 }
 fn unreserved_uri_chars(c: char) -> bool {
@@ -383,7 +345,7 @@ fn main() -> Result<(), GitUrlParseError> {
         ////println!("{:?}\n", parsed);
 
         let parsed = GitUrl2::parse(test_url).unwrap();
-        println!("{parsed:?}");
+        println!("{parsed:#?}");
         //println!("{:?}", parsed.parse());
         println!("");
     }
