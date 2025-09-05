@@ -1,10 +1,9 @@
-use super::GitUrlBuilderError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum GitUrlParseError {
-    #[error("Error from derive_builder")]
-    DeriveBuilderError(#[from] GitUrlBuilderError),
+    //#[error("Error from derive_builder")]
+    //DeriveBuilderError(#[from] GitUrlOldBuilderError),
 
     //#[error("Error from Url crate: {0}")]
     //UrlParseError(#[from] url::ParseError),

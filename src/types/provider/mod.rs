@@ -30,19 +30,19 @@ impl GenericProvider {
     }
 }
 
-impl GitProvider<GitUrl, GitUrlParseError> for GenericProvider {
+impl GitProvider<GitUrl<'_>, GitUrlParseError> for GenericProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((user, repo)))), Some(host)) = (
-            GenericProvider::_get_owner_repo(url.path().as_str()),
-            url.host(),
-        ) {
-            Ok(GenericProvider {
-                host: host.clone(),
-                owner: String::from(user),
-                repo: String::from(repo),
-            })
+        if let (Some(path), Some(host)) = (url.path(), url.host()) {
+            if let Ok((_, Some((user, repo)))) = GenericProvider::_get_owner_repo(path) {
+                Ok(GenericProvider {
+                    host: host.to_string(),
+                    owner: user.to_string(),
+                    repo: repo.to_string(),
+                })
+            } else {
+                Err(GitUrlParseError::UnexpectedFormat)
+            }
         } else {
-            // TODO: Check this error type later
             Err(GitUrlParseError::UnexpectedFormat)
         }
     }
@@ -63,20 +63,20 @@ impl AzureDevOpsProvider {
     }
 }
 
-impl GitProvider<GitUrl, GitUrlParseError> for AzureDevOpsProvider {
+impl GitProvider<GitUrl<'_>, GitUrlParseError> for AzureDevOpsProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((user, repo)))), Some(host)) = (
-            AzureDevOpsProvider::_get_user_repo(url.path().as_str()),
-            url.host(),
-        ) {
-            Ok(AzureDevOpsProvider {
-                host: host.clone(),
-                org: String::from(""),
-                project: String::from(user),
-                repo: String::from(repo),
-            })
+        if let (Some(path), Some(host)) = (url.path(), url.host()) {
+            if let Ok((_, Some((user, repo)))) = AzureDevOpsProvider::_get_user_repo(path) {
+                Ok(AzureDevOpsProvider {
+                    host: host.to_string(),
+                    org: String::from(""),
+                    project: String::from(user),
+                    repo: String::from(repo),
+                })
+            } else {
+                Err(GitUrlParseError::UnexpectedFormat)
+            }
         } else {
-            // TODO: Check this error type later
             Err(GitUrlParseError::UnexpectedFormat)
         }
     }
@@ -97,20 +97,20 @@ impl GitLabProvider {
     }
 }
 
-impl GitProvider<GitUrl, GitUrlParseError> for GitLabProvider {
+impl GitProvider<GitUrl<'_>, GitUrlParseError> for GitLabProvider {
     fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (Ok((_, Some((_user, repo)))), Some(host)) = (
-            GitLabProvider::_get_user_repo(url.path().as_str()),
-            url.host(),
-        ) {
-            Ok(GitLabProvider {
-                host: host.clone(),
-                user: String::from(""),
-                subgroup: None,
-                repo: String::from(repo),
-            })
+        if let (Some(path), Some(host)) = (url.path(), url.host()) {
+            if let Ok((_, Some((user, repo)))) = GitLabProvider::_get_user_repo(path) {
+                Ok(GitLabProvider {
+                    host: host.to_string(),
+                    user: String::from(""),
+                    subgroup: None,
+                    repo: String::from(repo),
+                })
+            } else {
+                Err(GitUrlParseError::UnexpectedFormat)
+            }
         } else {
-            // TODO: Check this error type later
             Err(GitUrlParseError::UnexpectedFormat)
         }
     }
