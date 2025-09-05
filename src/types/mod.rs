@@ -354,64 +354,69 @@ pub(crate) enum GitUrlParseHint {
 //    }
 //}
 
-///// Build the printable GitUrl from its components
-//impl fmt::Display for GitUrlOld {
-//    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//        let scheme = if let Some(scheme) = &self.scheme()
-//            && *self.print_scheme()
-//        {
-//            format!("{scheme}://")
-//        } else {
-//            String::new()
-//        };
-//
-//        let auth_info = match self.scheme() {
-//            Some(Scheme::Ssh) | Some(Scheme::Git) | Some(Scheme::GitSsh) => {
-//                if let Some(user) = &self.user() {
-//                    format!("{user}@")
-//                } else {
-//                    String::new()
-//                }
-//            }
-//            Some(Scheme::Http) | Some(Scheme::Https) => match (&self.user(), &self.token()) {
-//                (Some(user), Some(token)) => format!("{user}:{token}@"),
-//                (Some(user), None) => format!("{user}@",),
-//                (None, Some(token)) => format!("{token}@"),
-//                (None, None) => String::new(),
-//            },
-//            _ => String::new(),
-//        };
-//
-//        let host = match &self.host() {
-//            Some(host) => host.to_string(),
-//            None => String::new(),
-//        };
-//
-//        let port = match &self.port() {
-//            Some(p) => format!(":{p}",),
-//            None => String::new(),
-//        };
-//
-//        let path = if self.scheme().clone() == Some(Scheme::Ssh) {
-//            if self.port().is_some() {
-//                if !self.path().as_str().starts_with('/') {
-//                    format!("/{}", &self.path())
-//                } else {
-//                    self.path().to_string()
-//                }
-//            } else {
-//                format!(":{}", &self.path())
-//            }
-//        } else {
-//            self.path().to_string()
-//        };
-//
-//        let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
-//
-//        write!(f, "{git_url_str}",)
-//    }
-//}
-//
+// TODO: Revisit this
+/// Build the printable GitUrl from its components
+impl fmt::Display for GitUrl<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let scheme = if let Some(scheme) = &self.scheme()
+            && self.print_scheme()
+        {
+            format!("{scheme}://")
+        } else {
+            String::new()
+        };
+
+        let auth_info = match self.scheme() {
+            Some("ssh") | Some("git") | Some("git+ssh") => {
+                if let Some(user) = &self.user() {
+                    format!("{user}@")
+                } else {
+                    String::new()
+                }
+            }
+            Some("http") | Some("https") => match (&self.user(), &self.token()) {
+                (Some(user), Some(token)) => format!("{user}:{token}@"),
+                (Some(user), None) => format!("{user}@",),
+                (None, Some(token)) => format!("{token}@"),
+                (None, None) => String::new(),
+            },
+            _ => String::new(),
+        };
+
+        let host = match &self.host() {
+            Some(host) => host.to_string(),
+            None => String::new(),
+        };
+
+        let port = match &self.port() {
+            Some(p) => format!(":{p}",),
+            None => String::new(),
+        };
+
+        let path = if let Some(path) = &self.path() {
+            if self.scheme().clone() == Some("ssh") {
+                if self.port().is_some() {
+                    if !path.starts_with('/') {
+                        format!("/{path}")
+                    } else {
+                        path.to_string()
+                    }
+                } else {
+                    format!(":{path}")
+                }
+            } else {
+                path.to_string()
+            }
+        } else {
+            String::new()
+        };
+
+        let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
+
+        write!(f, "{git_url_str}",)
+    }
+}
+
 //impl FromStr for GitUrlOld {
 //    //type Err = GitUrlParseError;
 //    type Err = GitUrlOldBuilderError;
@@ -474,6 +479,13 @@ pub struct GitUrl<'a>
 }
 
 impl<'a> GitUrl<'a> {
+    pub fn provider_info<T>(&self) -> Result<T, GitUrlParseError>
+    where
+        T: GitProvider<GitUrl<'a>, GitUrlParseError>,
+    {
+        T::from_git_url(self)
+    }
+
     /// Returns `GitUrl` after removing `user` and `token` values
     /// Intended use-case is for non-destructive printing GitUrl excluding any embedded auth info
     pub fn trim_auth(&self) -> GitUrl {

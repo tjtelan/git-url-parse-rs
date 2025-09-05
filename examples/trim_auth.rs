@@ -1,4 +1,4 @@
-use git_url_parse::{GitUrl, GitUrlParseError};
+use git_url_parse::{GitUrlOld, GitUrlParseError};
 
 fn main() -> Result<(), GitUrlParseError> {
     env_logger::init();
@@ -25,7 +25,7 @@ fn main() -> Result<(), GitUrlParseError> {
         println!("Original:         {}", test_url);
         println!(
             "Parsed + Trimmed: {}\n",
-            GitUrl::parse(test_url).unwrap().trim_auth()
+            GitUrlOld::parse(test_url).unwrap().trim_auth()
         );
     }
     Ok(())
