@@ -1,10 +1,11 @@
-use nom::bytes::complete::{is_not, tag};
-use nom::sequence::separated_pair;
-use nom::{IResult, Parser, combinator::opt, combinator::rest};
+use nom::bytes::complete::{is_not, tag, take_until, take_while};
+use nom::sequence::{pair, preceded, separated_pair, terminated};
+use nom::{IResult, Parser, combinator::opt, combinator::recognize, combinator::rest};
 
 use derive_builder::Builder;
-use getset::{Getters, Setters};
+use getset::CopyGetters;
 
+use crate::types::GitUrlParseHint;
 use crate::{GitUrl, GitUrlParseError};
 
 pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
@@ -12,36 +13,28 @@ pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
 }
 
 // todo: builder and setters be private?
-#[derive(Debug, PartialEq, Eq, Clone, Builder, Default, Getters, Setters)]
-pub struct GenericProvider {
-    pub host: String,
-    pub owner: String,
-    pub repo: String,
+#[derive(Debug, PartialEq, Eq, Clone, Builder, Default, CopyGetters)]
+#[getset(get_copy = "pub")]
+pub struct GenericProvider<'a> {
+    pub owner: &'a str,
+    pub repo: &'a str,
 }
-impl GenericProvider {
-    fn _get_owner_repo(input: &str) -> IResult<&str, Option<(&str, &str)>> {
+impl<'a> GenericProvider<'a> {
+    fn parse_path(input: &str) -> IResult<&str, (&str, &str)> {
         let (input, _) = opt(tag("/")).parse(input)?;
-        opt(separated_pair(is_not("/"), tag("/"), rest)).parse(input)
+        separated_pair(is_not("/"), tag("/"), take_until(".git")).parse(input)
     }
 
-    // todo
     pub fn fullname(&self) -> String {
         format!("{}/{}", self.owner, self.repo)
     }
 }
 
-impl GitProvider<GitUrl<'_>, GitUrlParseError> for GenericProvider {
-    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
-        if let (path, Some(host)) = (url.path(), url.host()) {
-            if let Ok((_, Some((user, repo)))) = GenericProvider::_get_owner_repo(path) {
-                Ok(GenericProvider {
-                    host: host.to_string(),
-                    owner: user.to_string(),
-                    repo: repo.to_string(),
-                })
-            } else {
-                Err(GitUrlParseError::UnexpectedFormat)
-            }
+impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
+    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
+        let path = (url.path());
+        if let Ok((_, (user, repo))) = Self::parse_path(path) {
+            Ok(GenericProvider { owner: user, repo })
         } else {
             Err(GitUrlParseError::UnexpectedFormat)
         }
@@ -50,28 +43,26 @@ impl GitProvider<GitUrl<'_>, GitUrlParseError> for GenericProvider {
 
 // todo: builder, optional
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct AzureDevOpsProvider {
-    pub host: String,
-    pub org: String,
-    pub project: String,
-    pub repo: String,
+pub struct AzureDevOpsProvider<'a> {
+    pub org: &'a str,
+    pub project: &'a str,
+    pub repo: &'a str,
 }
-impl AzureDevOpsProvider {
+impl<'a> AzureDevOpsProvider<'a> {
     fn _get_user_repo(input: &str) -> IResult<&str, Option<(&str, &str)>> {
         let (n, _) = opt(tag("/")).parse(input)?;
         opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
     }
 }
 
-impl GitProvider<GitUrl<'_>, GitUrlParseError> for AzureDevOpsProvider {
-    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
+impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for AzureDevOpsProvider<'a> {
+    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
         if let (path, Some(host)) = (url.path(), url.host()) {
             if let Ok((_, Some((user, repo)))) = AzureDevOpsProvider::_get_user_repo(path) {
                 Ok(AzureDevOpsProvider {
-                    host: host.to_string(),
-                    org: String::from(""),
-                    project: String::from(user),
-                    repo: String::from(repo),
+                    org: "",
+                    project: user,
+                    repo: repo,
                 })
             } else {
                 Err(GitUrlParseError::UnexpectedFormat)
@@ -84,28 +75,26 @@ impl GitProvider<GitUrl<'_>, GitUrlParseError> for AzureDevOpsProvider {
 
 // todo: builder, optional
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub struct GitLabProvider {
-    pub host: String,
-    pub user: String,
-    pub subgroup: Option<Vec<String>>,
-    pub repo: String,
+pub struct GitLabProvider<'a> {
+    pub user: &'a str,
+    pub subgroup: Option<Vec<&'a str>>,
+    pub repo: &'a str,
 }
-impl GitLabProvider {
+impl<'a> GitLabProvider<'a> {
     fn _get_user_repo(input: &str) -> IResult<&str, Option<(&str, &str)>> {
         let (n, _) = opt(tag("/")).parse(input)?;
         opt(separated_pair(is_not("/"), tag("/"), rest)).parse(n)
     }
 }
 
-impl GitProvider<GitUrl<'_>, GitUrlParseError> for GitLabProvider {
-    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
+impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GitLabProvider<'a> {
+    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
         if let (path, Some(host)) = (url.path(), url.host()) {
             if let Ok((_, Some((user, repo)))) = GitLabProvider::_get_user_repo(path) {
                 Ok(GitLabProvider {
-                    host: host.to_string(),
-                    user: String::from(""),
+                    user: "",
                     subgroup: None,
-                    repo: String::from(repo),
+                    repo: repo,
                 })
             } else {
                 Err(GitUrlParseError::UnexpectedFormat)
