@@ -4,15 +4,12 @@ fn ssh_user_ports() {
     let test_url = "ssh://git@host.tld:9999/user/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(
-        parsed.url(),
-        "ssh://git@host.tld:9999/user/project-name.git"
-    );
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ssh"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("host.tld"));
-    assert_eq!(parsed.port(), Some("9999"));
+    assert_eq!(parsed.port(), Some(9999));
     assert_eq!(parsed.path(), Some("user/project-name.git"));
     assert_eq!(parsed.print_scheme(), true);
 }
@@ -22,7 +19,7 @@ fn ssh_no_scheme_no_user() {
     let test_url = "host.tld:user/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "host.tld:user/project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ssh"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
@@ -38,7 +35,7 @@ fn https_user_bitbucket() {
     let test_url = "https://user@bitbucket.org/user/repo.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "https://user@bitbucket.org/user/repo.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("https"));
     assert_eq!(parsed.user(), Some("user"));
     assert_eq!(parsed.token(), None);
@@ -53,7 +50,7 @@ fn ssh_user_bitbucket() {
     let test_url = "git@bitbucket.org:user/repo.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "git@bitbucket.org:user/repo.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ssh"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
@@ -68,10 +65,7 @@ fn https_user_auth_bitbucket() {
     let test_url = "https://x-token-auth:token@bitbucket.org/owner/name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(
-        parsed.url(),
-        "https://x-token-auth:token@bitbucket.org/owner/name.git"
-    );
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("https"));
     assert_eq!(parsed.user(), Some("x-token-auth"));
     assert_eq!(parsed.token(), Some("token"));
@@ -86,7 +80,7 @@ fn https_user_github() {
     let test_url = "https://user@github.com/user/repo.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "https://user@github.com/user/repo.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("https"));
     assert_eq!(parsed.user(), Some("user"));
     assert_eq!(parsed.token(), None);
@@ -101,7 +95,7 @@ fn ssh_user_github() {
     let test_url = "git@github.com:user/repo.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "git@github.com:user/repo.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ssh"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
@@ -116,10 +110,7 @@ fn https_user_auth_github() {
     let test_url = "https://token:x-oauth-basic@github.com/owner/name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(
-        parsed.url(),
-        "https://token:x-oauth-basic@github.com/owner/name.git"
-    );
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("https"));
     assert_eq!(parsed.user(), Some("token"));
     assert_eq!(parsed.token(), Some("x-oauth-basic"));
@@ -134,10 +125,7 @@ fn ssh_user_azure_devops() {
     let test_url = "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(
-        parsed.url(),
-        "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName"
-    );
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ssh"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
@@ -152,10 +140,7 @@ fn https_user_azure_devops() {
     let test_url = "https://organization@dev.azure.com/organization/project/_git/repo";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(
-        parsed.url(),
-        "https://organization@dev.azure.com/organization/project/_git/repo"
-    );
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("https"));
     assert_eq!(parsed.user(), Some("organization"));
     assert_eq!(parsed.token(), None);
@@ -170,7 +155,7 @@ fn ftp_user() {
     let test_url = "ftp://git@host.tld/user/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "ftp://git@host.tld/user/project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ftp"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
@@ -185,7 +170,7 @@ fn ftps_user() {
     let test_url = "ftps://git@host.tld/user/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "ftps://git@host.tld/user/project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("ftps"));
     assert_eq!(parsed.user(), Some("git"));
     assert_eq!(parsed.token(), None);
@@ -200,7 +185,7 @@ fn relative_unix_path() {
     let test_url = "../project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "../project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
@@ -215,7 +200,7 @@ fn absolute_unix_path() {
     let test_url = "/path/to/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "/path/to/project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
@@ -231,7 +216,7 @@ fn relative_windows_path() {
     let test_url = r"..\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), r"..\project-name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
@@ -243,20 +228,20 @@ fn relative_windows_path() {
 
 // Can I use `typed-path` to deal with this?
 // Issue #7 - Absolute Windows paths will not parse at all
-#[should_panic(expected = "URL parse failed: UnexpectedFormat")]
+//#[should_panic(expected = "URL parse failed: UnexpectedFormat")]
 #[test]
 fn absolute_windows_path() {
     let test_url = r"c:\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-
-    assert_eq!(parsed.url(), "ftps://git@host.tld/user/project-name.git");
-    assert_eq!(parsed.scheme(), Some("ftp"));
-    assert_eq!(parsed.user(), Some("git"));
+    println!("{parsed:#?}");
+    assert_eq!(parsed.to_string(), test_url);
+    assert_eq!(parsed.scheme(), Some("file"));
+    assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
-    assert_eq!(parsed.host(), Some("host.tld"));
+    assert_eq!(parsed.host(), None);
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/user/project-name.git"));
-    assert_eq!(parsed.print_scheme(), true);
+    assert_eq!(parsed.path(), Some(r"c:\project-name.git"));
+    assert_eq!(parsed.print_scheme(), false);
 }
 
 //// Move test
@@ -322,7 +307,7 @@ fn git() {
     let test_url = "git://github.com/owner/name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    assert_eq!(parsed.url(), "git://github.com/owner/name.git");
+    assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("git"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);

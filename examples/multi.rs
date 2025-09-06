@@ -4,8 +4,10 @@ fn main() -> Result<(), GitUrlParseError> {
     env_logger::init();
 
     let test_vec = vec![
-        "https://github.com/tjtelan/orbitalci.git",
-        "git@github.com:tjtelan/orbitalci.git",
+        "https://github.com/tjtelan/git-url-parse-rs.git",
+        "git@github.com:tjtelan/git-url-parse-rs.git",
+        "git@hostname:22/path/to/repo.git",
+        "ssh://git@github.com:22/asdf/asdf.git",
         "https://token:x-oauth-basic@host.xz/path/to/repo.git/",
         "https://x-token-auth:token@host.xz/path/to/repo.git/",
         "git+ssh://git@some-host.com/and-the-path/name",
@@ -15,6 +17,7 @@ fn main() -> Result<(), GitUrlParseError> {
         "~/path/to/repo.git/",
         "./path/to/repo.git/",
         "./path/to/repo.git",
+        "/path/to/repo.git",
         "../test_repo",
         "..\\test_repo",
         "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
