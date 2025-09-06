@@ -44,7 +44,7 @@ pub struct GitUrl<'url> {
     #[getset(get_copy = "pub")]
     port: Option<u16>,
     #[getset(get_copy = "pub")]
-    path: Option<&'url str>,
+    path: &'url str,
 
     //#[getset(skip)]
     //url: String,
@@ -85,15 +85,15 @@ impl fmt::Display for GitUrl<'_> {
         };
 
         let (port, path) = match (self.hint(), self.port(), self.path()) {
-            (GitUrlParseHint::Httplike, Some(port), Some(path)) => {
+            (GitUrlParseHint::Httplike, Some(port), path) => {
                 (format!(":{port}"), format!("/{path}"))
             }
-            (GitUrlParseHint::Httplike, None, Some(path)) => (format!(""), format!("{path}")),
-            (GitUrlParseHint::Sshlike, Some(port), Some(path)) => {
+            (GitUrlParseHint::Httplike, None, path) => (format!(""), format!("{path}")),
+            (GitUrlParseHint::Sshlike, Some(port), path) => {
                 (format!(":{port}"), format!("/{path}"))
             }
-            (GitUrlParseHint::Sshlike, None, Some(path)) => (format!(""), format!(":{path}")),
-            (GitUrlParseHint::Filelike, None, Some(path)) => (format!(""), format!("{path}")),
+            (GitUrlParseHint::Sshlike, None, path) => (format!(""), format!(":{path}")),
+            (GitUrlParseHint::Filelike, None, path) => (format!(""), format!("{path}")),
             _ => (format!(""), format!("")),
         };
 
@@ -113,7 +113,7 @@ impl fmt::Debug for GitUrl<'_> {
             token: Option<&'a str>,
             host: Option<&'a str>,
             port: Option<u16>,
-            path: Option<&'a str>,
+            path: &'a str,
         }
 
         let Self {
@@ -176,7 +176,7 @@ impl<'url> GitUrl<'url> {
         let (user_opt, token_opt) = heir_part.0.0;
         let host_opt = heir_part.0.1;
         let port_opt = heir_part.0.2;
-        let mut path_opt = heir_part.1;
+        let mut path = heir_part.1;
 
         // We will respect whether scheme was initially set
         let print_scheme = scheme.is_some();
@@ -197,20 +197,20 @@ impl<'url> GitUrl<'url> {
                 && token_opt.is_none()
                 && host_opt.is_none()
                 && port_opt.is_none()
-                && path_opt.is_some()
+                && !path.is_empty()
             {
                 // if we only have a path => file
                 GitUrlParseHint::Filelike
             } else if user_opt.is_some() && token_opt.is_some() {
                 // If we have a user and token => http
                 GitUrlParseHint::Httplike
-            } else if let Some(path) = path_opt {
+            } else if path.starts_with(':') {
                 // If path starts with a colon => ssh
-                if path.starts_with(':') {
-                    GitUrlParseHint::Sshlike
-                } else {
-                    GitUrlParseHint::Unknown
-                }
+                //if path.starts_with(':') {
+                GitUrlParseHint::Sshlike
+                //} else {
+                //    GitUrlParseHint::Unknown
+                //}
             } else {
                 GitUrlParseHint::Unknown
             }
@@ -224,9 +224,7 @@ impl<'url> GitUrl<'url> {
             } else {
                 scheme = Some("ssh")
             }
-            if let Some(path) = path_opt.as_mut() {
-                *path = &path[1..];
-            }
+            path = &path[1..];
         }
 
         if hint == GitUrlParseHint::Filelike {
@@ -243,7 +241,7 @@ impl<'url> GitUrl<'url> {
             token: token_opt,
             host: host_opt,
             port: port_opt,
-            path: path_opt,
+            path,
             //url: original,
             print_scheme,
             hint,
@@ -266,15 +264,15 @@ impl<'url> GitUrl<'url> {
     fn is_valid(&self) -> bool {
         // Last chance validation
 
+        //println!("{self:#?}");
+
         // There's an edge case we don't cover: ssh urls using ports + absolute paths
         // https://mslinn.com/git/040-git-urls.html - describes this pattern, if we decide to parse for it
 
         // only ssh paths start with ':'
         if self.hint() != GitUrlParseHint::Sshlike {
-            if let Some(path) = &self.path {
-                if path.starts_with(':') {
-                    return false;
-                }
+            if self.path.starts_with(':') {
+                return false;
             }
         }
 
@@ -287,17 +285,15 @@ impl<'url> GitUrl<'url> {
 
         // if we are filelike, we should only have paths
         if self.hint() == GitUrlParseHint::Filelike {
-            if (self.user().is_some()
+            if self.user().is_some()
                 || self.token().is_some()
                 || self.host().is_some()
                 || self.port().is_some()
-                || self.path().is_none())
+                || self.path().is_empty()
             {
                 return false;
             }
         }
-
-        // Anything not None should not be empty
 
         true
     }
@@ -327,19 +323,22 @@ impl<'url> GitUrl<'url> {
         // Must start with alpha character, then alpha/digit/+/-/.
         context(
             "Scheme parse",
-            opt(terminated(
-                recognize(pair(
-                    alpha1,
-                    take_while(|c: char| {
-                        c.is_ascii_alphabetic()
-                            || c.is_ascii_digit()
-                            || c == '+'
-                            || c == '-'
-                            || c == '.'
-                    }),
-                )),
-                // Not part of spec. We consume the "://" here to more easily manage scheme to be optional
-                tag("://"),
+            opt(verify(
+                terminated(
+                    recognize(pair(
+                        alpha1,
+                        take_while(|c: char| {
+                            c.is_ascii_alphabetic()
+                                || c.is_ascii_digit()
+                                || c == '+'
+                                || c == '-'
+                                || c == '.'
+                        }),
+                    )),
+                    // Not part of spec. We consume the "://" here to more easily manage scheme to be optional
+                    tag("://"),
+                ),
+                |s: &str| !s.is_empty(),
             )),
         )
         .parse(input)
@@ -355,7 +354,7 @@ impl<'url> GitUrl<'url> {
         &'url str,
         (
             ((Option<&str>, Option<&str>), Option<&str>, Option<u16>),
-            Option<&'url str>,
+            &'url str,
         ),
     > {
         let (input, authority) = Self::parse_authority(input)?;
@@ -363,16 +362,19 @@ impl<'url> GitUrl<'url> {
 
         let (input, part) = context(
             "Top of path parsers",
-            alt((
-                //preceded(tag("//"), Self::path_abempty_parser()),
-                Self::path_abempty_parser(),
-                Self::path_rootless_parser(),
-                Self::path_ssh_parser(),
-            )),
+            verify(
+                alt((
+                    //preceded(tag("//"), Self::path_abempty_parser()),
+                    Self::path_abempty_parser(),
+                    Self::path_rootless_parser(),
+                    Self::path_ssh_parser(),
+                )),
+                |s: &str| !s.is_empty(),
+            ),
         )
         .parse(input)?;
 
-        Ok((input, (authority, Some(part))))
+        Ok((input, (authority, part)))
     }
 
     fn parse_authority(
@@ -405,7 +407,7 @@ impl<'url> GitUrl<'url> {
                     let has_alphanum = s.chars().into_iter().find(|c| is_alphanum(*c)).is_some();
                     let starts_with_alphanum = s.chars().next().is_some_and(|c| is_alphanum(c));
 
-                    has_alphanum && starts_with_alphanum
+                    has_alphanum && starts_with_alphanum && !s.is_empty()
                 },
             )),
         )
@@ -436,9 +438,12 @@ impl<'url> GitUrl<'url> {
         // Userinfo
         let (authority_input, userinfo) = context(
             "Userinfo parser",
-            opt(recognize(take_while(|c: char| {
-                unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'
-            }))),
+            opt(verify(
+                recognize(take_while(|c: char| {
+                    unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':'
+                })),
+                |s: &str| !s.is_empty(),
+            )),
         )
         .parse(authority_input)?;
 
@@ -455,9 +460,15 @@ impl<'url> GitUrl<'url> {
                 let (_, (user, token)) = context(
                     "Userinfo with colon parser",
                     separated_pair(
-                        take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                        verify(
+                            take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                            |s: &str| !s.is_empty(),
+                        ),
                         tag(":"),
-                        take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                        verify(
+                            take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                            |s: &str| !s.is_empty(),
+                        ),
                     ),
                 )
                 .parse(userinfo)?;
@@ -475,9 +486,10 @@ impl<'url> GitUrl<'url> {
     fn parse_port(authority_input: &'url str) -> IResult<&'url str, Option<u16>> {
         context(
             "Port parser",
-            opt(map_opt(preceded(tag(":"), digit1), |s: &str| {
-                s.parse::<u16>().ok()
-            })),
+            opt(map_opt(
+                verify(preceded(tag(":"), digit1), |p_str: &str| !p_str.is_empty()),
+                |s: &str| s.parse::<u16>().ok(),
+            )),
         )
         .parse(authority_input)
     }

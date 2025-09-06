@@ -10,7 +10,7 @@ fn ssh_user_ports() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("host.tld"));
     assert_eq!(parsed.port(), Some(9999));
-    assert_eq!(parsed.path(), Some("user/project-name.git"));
+    assert_eq!(parsed.path(), "user/project-name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -25,7 +25,7 @@ fn ssh_no_scheme_no_user() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("host.tld"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("user/project-name.git"));
+    assert_eq!(parsed.path(), "user/project-name.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -41,7 +41,7 @@ fn https_user_bitbucket() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("bitbucket.org"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/user/repo.git"));
+    assert_eq!(parsed.path(), "/user/repo.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -56,7 +56,7 @@ fn ssh_user_bitbucket() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("bitbucket.org"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("user/repo.git"));
+    assert_eq!(parsed.path(), "user/repo.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -71,7 +71,7 @@ fn https_user_auth_bitbucket() {
     assert_eq!(parsed.token(), Some("token"));
     assert_eq!(parsed.host(), Some("bitbucket.org"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/owner/name.git"));
+    assert_eq!(parsed.path(), "/owner/name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -86,7 +86,7 @@ fn https_user_github() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("github.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/user/repo.git"));
+    assert_eq!(parsed.path(), "/user/repo.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -101,7 +101,7 @@ fn ssh_user_github() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("github.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("user/repo.git"));
+    assert_eq!(parsed.path(), "user/repo.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -116,7 +116,7 @@ fn https_user_auth_github() {
     assert_eq!(parsed.token(), Some("x-oauth-basic"));
     assert_eq!(parsed.host(), Some("github.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/owner/name.git"));
+    assert_eq!(parsed.path(), "/owner/name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -131,7 +131,7 @@ fn ssh_user_azure_devops() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("ssh.dev.azure.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("v3/CompanyName/ProjectName/RepoName"));
+    assert_eq!(parsed.path(), "v3/CompanyName/ProjectName/RepoName");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -146,7 +146,7 @@ fn https_user_azure_devops() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("dev.azure.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/organization/project/_git/repo"));
+    assert_eq!(parsed.path(), "/organization/project/_git/repo");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -161,7 +161,7 @@ fn ftp_user() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("host.tld"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/user/project-name.git"));
+    assert_eq!(parsed.path(), "/user/project-name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -176,7 +176,7 @@ fn ftps_user() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("host.tld"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/user/project-name.git"));
+    assert_eq!(parsed.path(), "/user/project-name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
 
@@ -185,13 +185,14 @@ fn relative_unix_path() {
     let test_url = "../project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
+    println! {"{parsed:#?}"};
     assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), None);
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("../project-name.git"));
+    assert_eq!(parsed.path(), "../project-name.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -200,13 +201,14 @@ fn absolute_unix_path() {
     let test_url = "/path/to/project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
+    println! {"{parsed:#?}"};
     assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), None);
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/path/to/project-name.git"));
+    assert_eq!(parsed.path(), "/path/to/project-name.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -216,13 +218,14 @@ fn relative_windows_path() {
     let test_url = r"..\project-name.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
+    println! {"{parsed:#?}"};
     assert_eq!(parsed.to_string(), test_url);
     assert_eq!(parsed.scheme(), Some("file"));
     assert_eq!(parsed.user(), None);
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), None);
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("..\\project-name.git"));
+    assert_eq!(parsed.path(), "..\\project-name.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -240,7 +243,7 @@ fn absolute_windows_path() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), None);
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some(r"c:\project-name.git"));
+    assert_eq!(parsed.path(), r"c:\project-name.git");
     assert_eq!(parsed.print_scheme(), false);
 }
 
@@ -313,6 +316,6 @@ fn git() {
     assert_eq!(parsed.token(), None);
     assert_eq!(parsed.host(), Some("github.com"));
     assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), Some("/owner/name.git"));
+    assert_eq!(parsed.path(), "/owner/name.git");
     assert_eq!(parsed.print_scheme(), true);
 }
