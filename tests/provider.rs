@@ -96,77 +96,73 @@ fn ssh_azure_devops() {
     assert_eq!(provider_info, expected)
 }
 
-//// GitLab
-//// https://docs.gitlab.com/topics/git/clone/#clone-with-ssh
-//// https://gitlab.com/explore/projects/trending?sort=latest_activity_desc
-//// https://gitlab.com/redhat/red-hat-ci-tools/kernel
-//#[test]
-//fn http_gitlab() {
-//    let test_url = "https://gitlab.com/gitlab-org/gitlab.git";
-//    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-//
-//    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-//    let expected = types::GitLabProvider {
-//        host: "gitlab.com",
-//        user: "gitlab-org",
-//        subgroup: None,
-//        repo: "gitlab",
-//    };
-//    assert_eq!(provider_info, expected)
-//}
-//
-//#[test]
-//fn ssh_gitlab() {
-//    let test_url = "git@gitlab.com:gitlab-org/gitlab.git";
-//    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-//
-//    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-//    let expected = types::GitLabProvider {
-//        host: "gitlab.com",
-//        user: "gitlab-org",
-//        subgroup: None,
-//        repo: "gitlab",
-//    };
-//    assert_eq!(provider_info, expected)
-//}
-//
-//#[test]
-//fn http_gitlab_subgroups() {
-//    let test_url = "https://gitlab.com/gitlab-org/sbom/systems/gitlab-core.git";
-//    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-//
-//    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-//    let expected = types::GitLabProvider {
-//        host: "gitlab.com",
-//        user: "gitlab-org",
-//        subgroup: Some(vec!["sbom", "systems"]),
-//        repo: "gitlab-core",
-//    };
-//    assert_eq!(provider_info, expected)
-//}
-//
-//#[test]
-//fn ssh_gitlab_subgroups() {
-//    let test_url = "git@gitlab.com:gitlab-org/sbom/systems/gitlab-core.git";
-//    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-//
-//    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-//    let expected = types::GitLabProvider {
-//        host: "gitlab.com",
-//        user: "gitlab-org",
-//        subgroup: Some(vec!["sbom", "systems"]),
-//        repo: "gitlab-core",
-//    };
-//    assert_eq!(provider_info, expected)
-//}
-//
-////#[test]
-////fn filepath() {
-////    let test_url = "file:///home/user/Documents/";
-////    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-////
-////    assert!(parsed.provider().is_none());
-////
-////    let provider_info: Result<GenericProvider, GitUrlParseError> = parsed.provider_info();
-////    assert!(provider_info.is_err())
-////}
+// GitLab
+// https://docs.gitlab.com/topics/git/clone/#clone-with-ssh
+// https://gitlab.com/explore/projects/trending?sort=latest_activity_desc
+// https://gitlab.com/redhat/red-hat-ci-tools/kernel
+#[test]
+fn http_gitlab() {
+    let test_url = "https://gitlab.com/gitlab-org/gitlab.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
+        user: "gitlab-org",
+        subgroup: None,
+        repo: "gitlab",
+    };
+    assert_eq!(provider_info, expected)
+}
+
+#[test]
+fn ssh_gitlab() {
+    let test_url = "git@gitlab.com:gitlab-org/gitlab.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
+        user: "gitlab-org",
+        subgroup: None,
+        repo: "gitlab",
+    };
+    assert_eq!(provider_info, expected)
+}
+
+#[test]
+fn http_gitlab_subgroups() {
+    let test_url = "https://gitlab.com/gitlab-org/sbom/systems/gitlab-core.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
+        user: "gitlab-org",
+        subgroup: Some(vec!["sbom", "systems"]),
+        repo: "gitlab-core",
+    };
+    assert_eq!(provider_info, expected)
+}
+
+#[test]
+fn ssh_gitlab_subgroups() {
+    let test_url = "git@gitlab.com:gitlab-org/sbom/systems/gitlab-core.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+
+    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
+    let expected = types::GitLabProvider {
+        user: "gitlab-org",
+        subgroup: Some(vec!["sbom", "systems"]),
+        repo: "gitlab-core",
+    };
+    assert_eq!(provider_info, expected)
+}
+
+#[test]
+fn filepath() {
+    let test_url = "file:///home/user/Documents/";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+
+    //assert!(parsed.provider_info::<GenericProvider>().is_ok());
+
+    let provider_info: Result<GenericProvider, GitUrlParseError> = parsed.provider_info();
+    assert!(provider_info.is_err())
+}
