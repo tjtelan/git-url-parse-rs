@@ -1,7 +1,4 @@
 pub mod types;
 
 // Re-exports
-pub use types::{GenericProvider, GitProvider, GitUrl, GitUrlParseError};
-
-#[cfg(feature = "tracing")]
-use tracing::debug;
+pub use types::{GitUrl, GitUrlParseError};

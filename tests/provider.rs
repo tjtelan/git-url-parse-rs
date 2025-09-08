@@ -1,4 +1,7 @@
-use git_url_parse::*;
+use git_url_parse::types::provider::{
+    AzureDevOpsProvider, GenericProvider, GitLabProvider, GitProvider,
+};
+use git_url_parse::{GitUrl, GitUrlParseError};
 
 // GitHub
 // https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository
@@ -73,8 +76,8 @@ fn http_azure_devops() {
     let test_url = "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::AzureDevOpsProvider = parsed.provider_info().unwrap();
-    let expected = types::AzureDevOpsProvider {
+    let provider_info: AzureDevOpsProvider = parsed.provider_info().unwrap();
+    let expected = AzureDevOpsProvider {
         org: "CompanyName",
         project: "ProjectName",
         repo: "RepoName",
@@ -87,8 +90,8 @@ fn ssh_azure_devops() {
     let test_url = "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::AzureDevOpsProvider = parsed.provider_info().unwrap();
-    let expected = types::AzureDevOpsProvider {
+    let provider_info: AzureDevOpsProvider = parsed.provider_info().unwrap();
+    let expected = AzureDevOpsProvider {
         org: "CompanyName",
         project: "ProjectName",
         repo: "RepoName",
@@ -105,9 +108,9 @@ fn http_gitlab() {
     let test_url = "https://gitlab.com/gitlab-org/gitlab.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-    let expected = types::GitLabProvider {
-        user: "gitlab-org",
+    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
+    let expected = GitLabProvider {
+        owner: "gitlab-org",
         subgroup: None,
         repo: "gitlab",
     };
@@ -119,9 +122,9 @@ fn ssh_gitlab() {
     let test_url = "git@gitlab.com:gitlab-org/gitlab.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-    let expected = types::GitLabProvider {
-        user: "gitlab-org",
+    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
+    let expected = GitLabProvider {
+        owner: "gitlab-org",
         subgroup: None,
         repo: "gitlab",
     };
@@ -133,9 +136,9 @@ fn http_gitlab_subgroups() {
     let test_url = "https://gitlab.com/gitlab-org/sbom/systems/gitlab-core.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-    let expected = types::GitLabProvider {
-        user: "gitlab-org",
+    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
+    let expected = GitLabProvider {
+        owner: "gitlab-org",
         subgroup: Some(vec!["sbom", "systems"]),
         repo: "gitlab-core",
     };
@@ -147,9 +150,9 @@ fn ssh_gitlab_subgroups() {
     let test_url = "git@gitlab.com:gitlab-org/sbom/systems/gitlab-core.git";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    let provider_info: types::GitLabProvider = parsed.provider_info().unwrap();
-    let expected = types::GitLabProvider {
-        user: "gitlab-org",
+    let provider_info: GitLabProvider = parsed.provider_info().unwrap();
+    let expected = GitLabProvider {
+        owner: "gitlab-org",
         subgroup: Some(vec!["sbom", "systems"]),
         repo: "gitlab-core",
     };
@@ -166,3 +169,48 @@ fn filepath() {
     let provider_info: Result<GenericProvider, GitUrlParseError> = parsed.provider_info();
     assert!(provider_info.is_err())
 }
+
+//// Move test
+////#[test]
+////fn ssh_user_path_not_acctname_reponame_format() {
+////    let test_url = "git@test.com:repo";
+////    let e = GitUrl::parse(test_url);
+////
+////    assert!(e.is_err());
+////    assert_eq!(
+////        format!("{}", e.err().unwrap()),
+////        "Git Url not in expected format"
+////    );
+////}
+//
+//// Move test
+////#[test]
+////fn ssh_without_organization() {
+////    let test_url = "ssh://f589726c3611:29418/repo";
+////    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+////    let expected = GitUrl {
+////        host: Some("f589726c3611".to_string()),
+////        //name: "repo".to_string(),
+////        //owner: Some("repo".to_string()),
+////        //organization: None,
+////        //fullname: "repo/repo".to_string(),
+////        scheme: Some(Scheme::Ssh),
+////        user: None,
+////        token: None,
+////        port: Some(29418),
+////        path: "repo".to_string(),
+////        //git_suffix: false,
+////        //scheme_prefix: true,
+////        print_scheme: true,
+////    };
+////
+////    assert_eq!(parsed, expected);
+////}
+//
+////#[test]
+////fn empty_path() {
+////    assert_eq!(
+////        GitUrlParseError::EmptyPath,
+////        GitUrl::parse("file://").unwrap_err()
+////    )
+////}

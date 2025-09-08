@@ -1,24 +1,23 @@
-use nom::bytes::complete::{is_not, tag, take_until, take_while};
-use nom::sequence::{pair, preceded, separated_pair, terminated};
-use nom::{IResult, Parser, combinator::opt, combinator::recognize, combinator::rest};
-
-use derive_builder::Builder;
-use getset::{CloneGetters, CopyGetters};
-
-use crate::types::{GitUrlParseHint, is_alphanum, provider};
+use crate::types::GitUrlParseHint;
 use crate::{GitUrl, GitUrlParseError};
+
+use getset::{CloneGetters, CopyGetters};
+use nom::bytes::complete::{is_not, tag, take_until};
+use nom::combinator::opt;
+use nom::sequence::{preceded, separated_pair, terminated};
+use nom::{IResult, Parser};
 
 pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
     fn from_git_url(url: &T) -> Result<Self, E>;
 }
 
-// todo: builder and setters be private?
-#[derive(Debug, PartialEq, Eq, Clone, Builder, Default, CopyGetters)]
+#[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct GenericProvider<'a> {
     pub owner: &'a str,
     pub repo: &'a str,
 }
+
 impl<'a> GenericProvider<'a> {
     fn parse_path(input: &str) -> Result<(&str, GenericProvider), GitUrlParseError> {
         let parse_result = || -> IResult<&str, GenericProvider> {
@@ -44,7 +43,7 @@ impl<'a> GenericProvider<'a> {
 impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
     fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
         if url.hint() == GitUrlParseHint::Filelike {
-            return Err(GitUrlParseError::ProviderUnsupported)    
+            return Err(GitUrlParseError::ProviderUnsupported);
         }
 
         let path = url.path();
@@ -52,13 +51,14 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default, CopyGetters)]
+#[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub struct AzureDevOpsProvider<'a> {
     pub org: &'a str,
     pub project: &'a str,
     pub repo: &'a str,
 }
+
 impl<'a> AzureDevOpsProvider<'a> {
     fn parse_http_path(input: &str) -> Result<(&str, AzureDevOpsProvider), GitUrlParseError> {
         let parse_result = || -> IResult<&str, AzureDevOpsProvider> {
@@ -134,12 +134,13 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for AzureDevOpsProvider<'a> {
 #[derive(Clone, Debug, PartialEq, Eq, Default, CopyGetters, CloneGetters)]
 pub struct GitLabProvider<'a> {
     #[getset(get_copy = "pub")]
-    pub user: &'a str,
+    pub owner: &'a str,
     #[getset(get_clone = "pub")]
     pub subgroup: Option<Vec<&'a str>>,
     #[getset(get_copy = "pub")]
     pub repo: &'a str,
 }
+
 impl<'a> GitLabProvider<'a> {
     fn parse_path(input: &str) -> Result<(&str, GitLabProvider), GitUrlParseError> {
         let parse_result = || -> IResult<&str, GitLabProvider> {
@@ -164,7 +165,7 @@ impl<'a> GitLabProvider<'a> {
             let repo = parts[parts.len() - 1];
 
             // Everything before the last part is the owner/subgroups
-            let (user, subgroup) = if parts.len() > 2 {
+            let (owner, subgroup) = if parts.len() > 2 {
                 (parts[0], Some(parts[1..parts.len() - 1].to_vec()))
             } else {
                 (parts[0], None)
@@ -173,7 +174,7 @@ impl<'a> GitLabProvider<'a> {
             Ok((
                 input,
                 GitLabProvider {
-                    user,
+                    owner,
                     subgroup,
                     repo,
                 },

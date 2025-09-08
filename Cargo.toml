@@ -1,10 +1,10 @@
 [package]
 authors = ["T.J. Telan <t.telan@gmail.com>"]
-categories = ["parser-implementations", "encoding"]
-description = "A parser for git repo urls based on url crate"
+categories = ["parser-implementations"]
+description = "A parser for git repo urls"
 documentation = "https://docs.rs/git-url-parse"
 edition = "2024"
-keywords = ["git", "url", "parsing", "normalize"]
+keywords = ["git", "url", "parsing"]
 license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
@@ -13,7 +13,7 @@ version = "0.4.6"
 rust-version = "1.82"
 
 [features]
-default = ["tracing"] # Do not keep tracing default
+default = []
 tracing = ["dep:tracing"]
 #filepath
 #validate
@@ -21,14 +21,14 @@ tracing = ["dep:tracing"]
 
 [dependencies]
 tracing = { version = "0.1", optional = true }
-#url = { version = "2.2" }
-#strum = { version = "0.27", features = ["derive"] }
-thiserror = "2"
-
 nom = "8"
-derive_builder = "0.20"
+thiserror = "2"
 getset = "0.1.6"
-typed-path = "0.11.0"
+url = { version = "2.5" }
+#strum = { version = "0.27", features = ["derive"] }
+
+#derive_builder = "0.20"
+#typed-path = "0.11.0"
 
 [dev-dependencies]
 env_logger = "0.11"

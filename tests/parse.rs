@@ -247,53 +247,8 @@ fn absolute_windows_path() {
     assert_eq!(parsed.print_scheme(), false);
 }
 
-//// Move test
-////#[test]
-////fn ssh_user_path_not_acctname_reponame_format() {
-////    let test_url = "git@test.com:repo";
-////    let e = GitUrl::parse(test_url);
-////
-////    assert!(e.is_err());
-////    assert_eq!(
-////        format!("{}", e.err().unwrap()),
-////        "Git Url not in expected format"
-////    );
-////}
-//
-//// Move test
-////#[test]
-////fn ssh_without_organization() {
-////    let test_url = "ssh://f589726c3611:29418/repo";
-////    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-////    let expected = GitUrl {
-////        host: Some("f589726c3611".to_string()),
-////        //name: "repo".to_string(),
-////        //owner: Some("repo".to_string()),
-////        //organization: None,
-////        //fullname: "repo/repo".to_string(),
-////        scheme: Some(Scheme::Ssh),
-////        user: None,
-////        token: None,
-////        port: Some(29418),
-////        path: "repo".to_string(),
-////        //git_suffix: false,
-////        //scheme_prefix: true,
-////        print_scheme: true,
-////    };
-////
-////    assert_eq!(parsed, expected);
-////}
-//
-////#[test]
-////fn empty_path() {
-////    assert_eq!(
-////        GitUrlParseError::EmptyPath,
-////        GitUrl::parse("file://").unwrap_err()
-////    )
-////}
-
 #[test]
-fn bad_port_number() {
+fn bad_port_1() {
     let test_url = "https://github.com:crypto-browserify/browserify-rsa.git";
     let e = GitUrl::parse(test_url);
 
@@ -304,18 +259,46 @@ fn bad_port_number() {
     //);
 }
 
-// This test might not have a use anymore if we're not expanding "git:" -> "git://"
 #[test]
-fn git() {
-    let test_url = "git://github.com/owner/name.git";
-    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+fn bad_port_2() {
+    let test_url = "https://example.org:7z";
+    let e = GitUrl::parse(test_url);
 
-    assert_eq!(parsed.to_string(), test_url);
-    assert_eq!(parsed.scheme(), Some("git"));
-    assert_eq!(parsed.user(), None);
-    assert_eq!(parsed.token(), None);
-    assert_eq!(parsed.host(), Some("github.com"));
-    assert_eq!(parsed.port(), None);
-    assert_eq!(parsed.path(), "/owner/name.git");
-    assert_eq!(parsed.print_scheme(), true);
+    assert!(e.is_err());
+    //assert_eq!(
+    //    format!("{}", e.err().unwrap()),
+    //    "Error from Url crate: invalid port number"
+    //);
+}
+
+#[test]
+fn port_out_of_range() {
+    let test_url = "https://example.org:70000";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+}
+
+#[test]
+fn host_missing_1() {
+    let test_url = "https://:443";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+}
+
+#[test]
+fn host_missing_2() {
+    let test_url = "https://user:pass@";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
+}
+
+#[test]
+fn host_invalid() {
+    let test_url = "foo://exa[mple.org";
+    let e = GitUrl::parse(test_url);
+
+    assert!(e.is_err());
 }
