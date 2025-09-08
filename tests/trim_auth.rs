@@ -8,7 +8,7 @@ fn ssh_user_ports() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 // Specific service support
@@ -20,7 +20,7 @@ fn https_user_bitbucket() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -31,7 +31,7 @@ fn ssh_user_bitbucket() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn https_user_auth_bitbucket() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn https_user_github() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -64,7 +64,7 @@ fn ssh_user_github() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn https_user_auth_github() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn ssh_user_azure_devops() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }
 
 #[test]
@@ -97,5 +97,5 @@ fn https_user_azure_devops() {
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
     let trimmed = parsed.trim_auth();
 
-    assert_eq!(format!("{trimmed}"), expected);
+    assert_eq!(trimmed.to_string(), expected);
 }

@@ -3,13 +3,6 @@ use git_url_parse::types::provider::{
 };
 use git_url_parse::{GitUrl, GitUrlParseError};
 
-// GitHub
-// https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository
-// BitBucket
-// https://confluence.atlassian.com/bitbucketserver/clone-a-repository-790632786.html
-// Codeberg
-// https://codeberg.org/explore/repos
-
 #[test]
 fn http_generic_git() {
     let test_url = "https://github.com/tjtelan/git-url-parse-rs.git";
@@ -67,10 +60,6 @@ fn self_host() {
     assert_eq!(provider_info, expected)
 }
 
-// Azure Devops
-// https://learn.microsoft.com/en-us/azure/devops/repos/git/clone?view=azure-devops&tabs=visual-studio-2022
-// https://learn.microsoft.com/en-us/azure/devops/release-notes/2018/sep-10-azure-devops-launch#administration
-//vec!["dev.azure.com", "ssh.dev.azure.com", "visualstudio.com"];
 #[test]
 fn http_azure_devops() {
     let test_url = "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName";
@@ -99,10 +88,6 @@ fn ssh_azure_devops() {
     assert_eq!(provider_info, expected)
 }
 
-// GitLab
-// https://docs.gitlab.com/topics/git/clone/#clone-with-ssh
-// https://gitlab.com/explore/projects/trending?sort=latest_activity_desc
-// https://gitlab.com/redhat/red-hat-ci-tools/kernel
 #[test]
 fn http_gitlab() {
     let test_url = "https://gitlab.com/gitlab-org/gitlab.git";
@@ -164,53 +149,10 @@ fn filepath() {
     let test_url = "file:///home/user/Documents/";
     let parsed = GitUrl::parse(test_url).expect("URL parse failed");
 
-    //assert!(parsed.provider_info::<GenericProvider>().is_ok());
-
     let provider_info: Result<GenericProvider, GitUrlParseError> = parsed.provider_info();
-    assert!(provider_info.is_err())
-}
 
-//// Move test
-////#[test]
-////fn ssh_user_path_not_acctname_reponame_format() {
-////    let test_url = "git@test.com:repo";
-////    let e = GitUrl::parse(test_url);
-////
-////    assert!(e.is_err());
-////    assert_eq!(
-////        format!("{}", e.err().unwrap()),
-////        "Git Url not in expected format"
-////    );
-////}
-//
-//// Move test
-////#[test]
-////fn ssh_without_organization() {
-////    let test_url = "ssh://f589726c3611:29418/repo";
-////    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-////    let expected = GitUrl {
-////        host: Some("f589726c3611".to_string()),
-////        //name: "repo".to_string(),
-////        //owner: Some("repo".to_string()),
-////        //organization: None,
-////        //fullname: "repo/repo".to_string(),
-////        scheme: Some(Scheme::Ssh),
-////        user: None,
-////        token: None,
-////        port: Some(29418),
-////        path: "repo".to_string(),
-////        //git_suffix: false,
-////        //scheme_prefix: true,
-////        print_scheme: true,
-////    };
-////
-////    assert_eq!(parsed, expected);
-////}
-//
-////#[test]
-////fn empty_path() {
-////    assert_eq!(
-////        GitUrlParseError::EmptyPath,
-////        GitUrl::parse("file://").unwrap_err()
-////    )
-////}
+    assert!(provider_info.is_err());
+    if let Err(e) = provider_info {
+        assert_eq!(e, GitUrlParseError::ProviderUnsupported)
+    }
+}

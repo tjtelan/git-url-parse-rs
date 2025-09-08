@@ -2,10 +2,10 @@ use crate::types::GitUrlParseHint;
 use crate::{GitUrl, GitUrlParseError};
 
 use getset::{CloneGetters, CopyGetters};
+use nom::Parser;
 use nom::bytes::complete::{is_not, tag, take_until};
 use nom::combinator::opt;
 use nom::sequence::{preceded, separated_pair, terminated};
-use nom::{IResult, Parser};
 
 pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
     fn from_git_url(url: &T) -> Result<Self, E>;
@@ -20,19 +20,10 @@ pub struct GenericProvider<'a> {
 
 impl<'a> GenericProvider<'a> {
     fn parse_path(input: &str) -> Result<(&str, GenericProvider), GitUrlParseError> {
-        let parse_result = || -> IResult<&str, GenericProvider> {
-            let (input, _) = opt(tag("/")).parse(input)?;
-            let (input, (user, repo)) =
-                separated_pair(is_not("/"), tag("/"), take_until(".git")).parse(input)?;
-            Ok((input, GenericProvider { owner: user, repo }))
-        };
-
-        parse_result().map_err(|e| match e {
-            nom::Err::Error(err) | nom::Err::Failure(err) => {
-                GitUrlParseError::NomParseError(err.to_string())
-            }
-            nom::Err::Incomplete(_) => GitUrlParseError::UnexpectedFormat,
-        })
+        let (input, _) = opt(tag("/")).parse(input)?;
+        let (input, (user, repo)) =
+            separated_pair(is_not("/"), tag("/"), take_until(".git")).parse(input)?;
+        Ok((input, GenericProvider { owner: user, repo }))
     }
 
     pub fn fullname(&self) -> String {
@@ -61,59 +52,42 @@ pub struct AzureDevOpsProvider<'a> {
 
 impl<'a> AzureDevOpsProvider<'a> {
     fn parse_http_path(input: &str) -> Result<(&str, AzureDevOpsProvider), GitUrlParseError> {
-        let parse_result = || -> IResult<&str, AzureDevOpsProvider> {
-            // Handle optional leading /
-            let (input, _) = opt(tag("/")).parse(input)?;
+        // Handle optional leading /
+        let (input, _) = opt(tag("/")).parse(input)?;
 
-            // Parse org/project/repo
-            let (input, (org, (project, repo))) = separated_pair(
+        // Parse org/project/repo
+        let (input, (org, (project, repo))) = separated_pair(
+            is_not("/"),
+            tag("/"),
+            separated_pair(
                 is_not("/"),
                 tag("/"),
-                separated_pair(
-                    is_not("/"),
-                    tag("/"),
-                    preceded(opt(tag("_git/")), is_not("")),
-                ),
-            )
-            .parse(input)?;
+                preceded(opt(tag("_git/")), is_not("")),
+            ),
+        )
+        .parse(input)?;
 
-            Ok((input, AzureDevOpsProvider { org, project, repo }))
-        };
-
-        parse_result().map_err(|e| match e {
-            nom::Err::Error(err) | nom::Err::Failure(err) => {
-                GitUrlParseError::NomParseError(err.to_string())
-            }
-            nom::Err::Incomplete(_) => GitUrlParseError::UnexpectedFormat,
-        })
+        Ok((input, AzureDevOpsProvider { org, project, repo }))
     }
-    fn parse_ssh_path(input: &str) -> Result<(&str, AzureDevOpsProvider), GitUrlParseError> {
-        let parse_result = || -> IResult<&str, AzureDevOpsProvider> {
-            // Handle optional leading v3/ or other prefix
-            let (input, _) = opt(take_until("/")).parse(input)?;
-            let (input, _) = opt(tag("/")).parse(input)?;
 
-            // Parse org/project/repo
-            let (input, (org, (project, repo))) = separated_pair(
+    fn parse_ssh_path(input: &str) -> Result<(&str, AzureDevOpsProvider), GitUrlParseError> {
+        // Handle optional leading v3/ or other prefix
+        let (input, _) = opt(take_until("/")).parse(input)?;
+        let (input, _) = opt(tag("/")).parse(input)?;
+
+        // Parse org/project/repo
+        let (input, (org, (project, repo))) = separated_pair(
+            is_not("/"),
+            tag("/"),
+            separated_pair(
                 is_not("/"),
                 tag("/"),
-                separated_pair(
-                    is_not("/"),
-                    tag("/"),
-                    terminated(is_not("."), opt(tag(".git"))),
-                ),
-            )
-            .parse(input)?;
+                terminated(is_not("."), opt(tag(".git"))),
+            ),
+        )
+        .parse(input)?;
 
-            Ok((input, AzureDevOpsProvider { org, project, repo }))
-        };
-
-        parse_result().map_err(|e| match e {
-            nom::Err::Error(err) | nom::Err::Failure(err) => {
-                GitUrlParseError::NomParseError(err.to_string())
-            }
-            nom::Err::Incomplete(_) => GitUrlParseError::UnexpectedFormat,
-        })
+        Ok((input, AzureDevOpsProvider { org, project, repo }))
     }
 }
 
@@ -143,50 +117,40 @@ pub struct GitLabProvider<'a> {
 
 impl<'a> GitLabProvider<'a> {
     fn parse_path(input: &str) -> Result<(&str, GitLabProvider), GitUrlParseError> {
-        let parse_result = || -> IResult<&str, GitLabProvider> {
-            // Optional leading slash
-            let (input, _) = opt(tag("/")).parse(input)?;
+        // Optional leading slash
+        let (input, _) = opt(tag("/")).parse(input)?;
 
-            // Remove .git extension if present
-            let input = input.trim_end_matches(".git");
+        // Remove .git extension if present
+        let input = input.trim_end_matches(".git");
 
-            // Split the path
-            let parts: Vec<&str> = input.split('/').filter(|s| !s.is_empty()).collect();
+        // Split the path
+        let parts: Vec<&str> = input.split('/').filter(|s| !s.is_empty()).collect();
 
-            // Ensure we have at least 2 parts (owner and repo)
-            if parts.len() < 2 {
-                return Err(nom::Err::Error(nom::error::Error::new(
-                    input,
-                    nom::error::ErrorKind::Fail,
-                )));
-            }
+        // Ensure we have at least 2 parts (owner and repo)
+        if parts.len() < 2 {
+            return Err(GitUrlParseError::ProviderParseFail(
+                "Path needs at least 2 parts: ex. \'/owner/repo\'".into(),
+            ));
+        }
 
-            // Last part is the repo
-            let repo = parts[parts.len() - 1];
+        // Last part is the repo
+        let repo = parts[parts.len() - 1];
 
-            // Everything before the last part is the owner/subgroups
-            let (owner, subgroup) = if parts.len() > 2 {
-                (parts[0], Some(parts[1..parts.len() - 1].to_vec()))
-            } else {
-                (parts[0], None)
-            };
-
-            Ok((
-                input,
-                GitLabProvider {
-                    owner,
-                    subgroup,
-                    repo,
-                },
-            ))
+        // Everything before the last part is the owner/subgroups
+        let (owner, subgroup) = if parts.len() > 2 {
+            (parts[0], Some(parts[1..parts.len() - 1].to_vec()))
+        } else {
+            (parts[0], None)
         };
 
-        parse_result().map_err(|e| match e {
-            nom::Err::Error(err) | nom::Err::Failure(err) => {
-                GitUrlParseError::NomParseError(err.to_string())
-            }
-            nom::Err::Incomplete(_) => GitUrlParseError::UnexpectedFormat,
-        })
+        Ok((
+            input,
+            GitLabProvider {
+                owner,
+                subgroup,
+                repo,
+            },
+        ))
     }
 }
 

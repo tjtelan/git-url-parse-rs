@@ -35,10 +35,10 @@ pub struct GitUrl<'url> {
     host: Option<&'url str>,
     #[getset(get_copy = "pub")]
     port: Option<u16>,
-    #[getset(get_copy = "pub")]
+    #[getset(get_copy = "pub", set = "pub(crate)")]
     path: &'url str,
     /// Include scheme:// when printing url
-    #[getset(get_copy = "pub")]
+    #[getset(get_copy = "pub", set = "pub(crate)")]
     print_scheme: bool,
     #[getset(get_copy = "pub(crate)")]
     hint: GitUrlParseHint,
@@ -47,7 +47,23 @@ pub struct GitUrl<'url> {
 /// Build the printable GitUrl from its components
 impl fmt::Display for GitUrl<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let scheme = if self.print_scheme() {
+        let git_url_str = self.display();
+
+        write!(f, "{git_url_str}",)
+    }
+}
+
+impl<'url> GitUrl<'url> {
+    fn display(&self) -> String {
+        self.build_string(false)
+    }
+
+    fn url_compat_display(&self) -> String {
+        self.build_string(true)
+    }
+
+    fn build_string(&self, url_compat: bool) -> String {
+        let scheme = if self.print_scheme() || url_compat {
             if let Some(scheme) = self.scheme() {
                 format!("{scheme}://")
             } else {
@@ -77,14 +93,19 @@ impl fmt::Display for GitUrl<'_> {
             (GitUrlParseHint::Sshlike, Some(port), path) => {
                 (format!(":{port}"), format!("/{path}"))
             }
-            (GitUrlParseHint::Sshlike, None, path) => (String::new(), format!(":{path}")),
+            (GitUrlParseHint::Sshlike, None, path) => {
+                if url_compat {
+                    (String::new(), format!("/{path}"))
+                } else {
+                    (String::new(), format!(":{path}"))
+                }
+            }
             (GitUrlParseHint::Filelike, None, path) => (String::new(), path.to_string()),
             _ => (String::new(), String::new()),
         };
 
         let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
-
-        write!(f, "{git_url_str}",)
+        git_url_str
     }
 }
 
@@ -178,11 +199,9 @@ impl<'url> GitUrl<'url> {
             hint,
         };
 
-        if git_url.is_valid() {
-            Ok(git_url)
-        } else {
-            Err(GitUrlParseError::UnexpectedFormat)
-        }
+        let _check = git_url.is_valid()?;
+
+        Ok(git_url)
     }
 
     pub fn provider_info<T>(&self) -> Result<T, GitUrlParseError>
@@ -192,14 +211,14 @@ impl<'url> GitUrl<'url> {
         T::from_git_url(self)
     }
 
-    fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> Result<(), GitUrlParseError> {
         // Last chance validation
 
-        //if url::Url::parse(&self.to_string()).is_err() {
-        //    return false
-        //}
-
         //println!("{self:#?}");
+
+        if self.path().is_empty() {
+            return Err(GitUrlParseError::InvalidPathEmpty);
+        }
 
         // There's an edge case we don't cover: ssh urls using ports + absolute paths
         // https://mslinn.com/git/040-git-urls.html - describes this pattern, if we decide to parse for it
@@ -214,7 +233,7 @@ impl<'url> GitUrl<'url> {
                 debug!("path starts with ':'?", self.path.starts_with(':'));
             }
 
-            return false;
+            return Err(GitUrlParseError::InvalidPortNumber);
         }
 
         // if we are not httplike, we shouldn't have tokens
@@ -224,7 +243,7 @@ impl<'url> GitUrl<'url> {
                 debug!("{}", self.hint());
                 debug!("Token support only for httplike url", self.token());
             }
-            return false;
+            return Err(GitUrlParseError::InvalidTokenUnsupported);
         }
 
         // if we are filelike, we should only have paths
@@ -242,9 +261,13 @@ impl<'url> GitUrl<'url> {
                     ?self
                 );
             }
-            return false;
+            return Err(GitUrlParseError::InvalidFilePattern);
         }
 
-        true
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        println!("{:#?}", self.url_compat_display());
+        let _u = url::Url::parse(&self.url_compat_display())?;
+
+        Ok(())
     }
 }

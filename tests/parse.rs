@@ -212,7 +212,6 @@ fn absolute_unix_path() {
     assert_eq!(parsed.print_scheme(), false);
 }
 
-// Issue #6 - Relative Windows paths will parse into Unix paths
 #[test]
 fn relative_windows_path() {
     let test_url = r"..\project-name.git";
@@ -229,9 +228,6 @@ fn relative_windows_path() {
     assert_eq!(parsed.print_scheme(), false);
 }
 
-// Can I use `typed-path` to deal with this?
-// Issue #7 - Absolute Windows paths will not parse at all
-//#[should_panic(expected = "URL parse failed: UnexpectedFormat")]
 #[test]
 fn absolute_windows_path() {
     let test_url = r"c:\project-name.git";
@@ -253,10 +249,9 @@ fn bad_port_1() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
-    //assert_eq!(
-    //    format!("{}", e.err().unwrap()),
-    //    "Error from Url crate: invalid port number"
-    //);
+    if let Err(err) = e {
+        assert_eq!(err, GitUrlParseError::InvalidPortNumber)
+    }
 }
 
 #[test]
@@ -265,10 +260,9 @@ fn bad_port_2() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
-    //assert_eq!(
-    //    format!("{}", e.err().unwrap()),
-    //    "Error from Url crate: invalid port number"
-    //);
+    if let Err(err) = e {
+        assert_eq!(err, GitUrlParseError::InvalidPortNumber)
+    }
 }
 
 #[test]
@@ -277,6 +271,9 @@ fn port_out_of_range() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
+    if let Err(err) = e {
+        assert_eq!(err, GitUrlParseError::InvalidPortNumber)
+    }
 }
 
 #[test]
@@ -285,6 +282,9 @@ fn host_missing_1() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
+    if let Err(err) = e {
+        assert_eq!(err, GitUrlParseError::InvalidPathEmpty)
+    }
 }
 
 #[test]
@@ -293,11 +293,15 @@ fn host_missing_2() {
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());
+    if let Err(err) = e {
+        assert_eq!(err, GitUrlParseError::InvalidPathEmpty)
+    }
 }
 
+// FIXME: This test does not throw the correct error
 #[test]
 fn host_invalid() {
-    let test_url = "foo://exa[mple.org";
+    let test_url = "foo://exa[mple.org/owner/repo.git";
     let e = GitUrl::parse(test_url);
 
     assert!(e.is_err());

@@ -2,7 +2,7 @@ use getset::CopyGetters;
 use nom::Finish;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_while};
-use nom::character::complete::{alpha1, digit1};
+use nom::character::complete::alpha1;
 use nom::combinator::{map_opt, peek, recognize, verify};
 use nom::error::context;
 use nom::multi::{many0, many1};
@@ -17,15 +17,15 @@ pub(crate) struct UrlSpecParser<'url> {
 }
 
 impl<'url> UrlSpecParser<'url> {
-    // https://datatracker.ietf.org/doc/html/rfc3986
-    // Based on rfc3986, but does not strictly cover the spec
-    // * No support for:
-    //     * query, fragment, percent-encoding, and much of the edges for path support
-    //     * many forms of ip representations like ipv6, hexdigits
-    // * Added support for:
-    //     * parsing ssh git urls which use ":" as a delimiter between the authority and path
-    //     * parsing userinfo into user:token (but its officially deprecated, per #section-3.2.1)
-    //     * some limited support for windows/linux filepaths
+    /// https://datatracker.ietf.org/doc/html/rfc3986
+    /// Based on rfc3986, but does not strictly cover the spec
+    /// * No support for:
+    ///     * query, fragment, percent-encoding, and much of the edges for path support
+    ///     * many forms of ip representations like ipv6, hexdigits
+    /// * Added support for:
+    ///     * parsing ssh git urls which use ":" as a delimiter between the authority and path
+    ///     * parsing userinfo into user:token (but its officially deprecated, per #section-3.2.1)
+    ///     * some limited support for windows/linux filepaths
     pub(crate) fn parse(input: &'url str) -> IResult<&'url str, Self> {
         let (input, scheme) = Self::parse_scheme.parse(input).finish().unwrap_or_default();
         let (input, heir_part) = Self::parse_hier_part(input).finish().unwrap_or_default();
@@ -313,10 +313,17 @@ impl<'url> UrlSpecParser<'url> {
             debug!("Parsing port");
         }
 
+        // We need to pull the full value of what's in the segment THEN parse for numbers
         let (input, port) = context(
             "Port parser",
             opt(map_opt(
-                verify(preceded(tag(":"), digit1), |p_str: &str| !p_str.is_empty()),
+                verify(
+                    preceded(
+                        tag(":"),
+                        take_while(|c: char| unreserved_uri_chars(c) || subdelims_uri_chars(c)),
+                    ),
+                    |p_str: &str| !p_str.is_empty(),
+                ),
                 |s: &str| s.parse::<u16>().ok(),
             )),
         )
