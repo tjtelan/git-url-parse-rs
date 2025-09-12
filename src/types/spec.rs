@@ -72,12 +72,19 @@ impl<'url> UrlSpecParser<'url> {
             )),
         );
 
+        // Check if we have scheme 'git:' without the '//' for normalizing to 'git://'
+        if Self::short_git_scheme_check(input) {
+            // return early if we are normalizing 'git:' (short git)
+            if let Ok((input, scheme)) = Self::short_git_scheme_parser().parse(input) {
+                return Ok((input, scheme));
+            }
+        }
+
         if check.parse(input).is_err() {
             #[cfg(feature = "log")]
             {
                 debug!("Look ahead check for scheme failed");
             }
-
             return Ok((input, None));
         }
 
@@ -425,6 +432,43 @@ impl<'url> UrlSpecParser<'url> {
                 many0(pair(tag("/"), take_while(|c: char| pchar_uri_chars(c)))),
             )),
         )
+    }
+
+    /// consuming parser for `git:` (short git) as scheme for normalizing
+    fn short_git_scheme_parser() -> impl Parser<
+        &'url str,
+        Output = <dyn Parser<
+            &'url str,
+            Output = Option<&'url str>,
+            Error = nom::error::Error<&'url str>,
+        > as Parser<&'url str>>::Output,
+        Error = nom::error::Error<&'url str>,
+    > {
+        #[cfg(feature = "log")]
+        {
+            debug!("Parsing short git scheme");
+        }
+
+        context(
+            "short git scheme parse",
+            opt(terminated(
+                tag::<&str, &str, nom::error::Error<&str>>("git"),
+                tag::<&str, &str, nom::error::Error<&str>>(":"),
+            )),
+        )
+    }
+
+    /// Non-consuming check for `git:` (short git) as scheme for normalizing
+    fn short_git_scheme_check(input: &'url str) -> bool {
+        context(
+            "short git validate",
+            peek(terminated(
+                tag::<&str, &str, nom::error::Error<&str>>("git"),
+                tag::<&str, &str, nom::error::Error<&str>>(":"),
+            )),
+        )
+        .parse(input)
+        .is_ok()
     }
 }
 

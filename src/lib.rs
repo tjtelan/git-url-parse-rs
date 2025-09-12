@@ -45,7 +45,7 @@
 //!     let provider : GenericProvider = ssh_url.provider_info()?;
 //!     assert_eq!(provider.owner(), "tjtelan");
 //!     assert_eq!(provider.repo(), "git-url-parse-rs");
-//! 
+//!
 //!     // Implement your own provider
 //!     #[derive(Debug, Clone, PartialEq, Eq)]
 //!     struct CustomProvider;
@@ -56,7 +56,7 @@
 //!             Ok(Self)
 //!         }
 //!     }
-//! 
+//!
 //!     let custom_provider: CustomProvider = ssh_url.provider_info()?;
 //!     let expected = CustomProvider;
 //!     assert_eq!(custom_provider, expected);
@@ -80,18 +80,18 @@
 //! ```shell
 //! cargo add git-url-parse
 //! ```
-//! 
+//!
 //! ### Cargo Features
-//! 
-//! #### `log` 
+//!
+//! #### `log`
 //! Enable for internal `debug!` output from [log](https://docs.rs/log/latest)
-//! #### `serde` 
+//! #### `serde`
 //! Enable for [serde](https://docs.rs/serde/latest/) `Serialize`/`Deserialize` on [`GitUrl`](crate::types::GitUrl)
-//! #### `url` 
+//! #### `url`
 //! (**enabled by default**)
-//! 
-//! Uses [url](https://docs.rs/url/latest/) during parsing for full url validation 
-//! 
+//!
+//! Uses [url](https://docs.rs/url/latest/) during parsing for full url validation
+//!
 
 pub mod types;
 

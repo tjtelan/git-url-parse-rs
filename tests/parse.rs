@@ -349,3 +349,21 @@ fn host_invalid() {
 
     assert!(e.is_err());
 }
+
+#[test]
+fn short_git() {
+    let _ = env_logger::try_init();
+    let test_url = "git:github.com/owner/name.git";
+    let expected_url = "git://github.com/owner/name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    debug!("{:#?}", parsed);
+
+    assert_eq!(parsed.to_string(), expected_url);
+    assert_eq!(parsed.scheme(), Some("git"));
+    assert_eq!(parsed.user(), None);
+    assert_eq!(parsed.password(), None);
+    assert_eq!(parsed.host(), Some("github.com"));
+    assert_eq!(parsed.port(), None);
+    assert_eq!(parsed.path(), "/owner/name.git");
+    assert_eq!(parsed.print_scheme(), true);
+}

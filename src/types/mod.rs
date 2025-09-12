@@ -59,7 +59,7 @@ pub struct GitUrl<'url> {
     /// The port number of the repo host, if specified
     #[getset(get_copy = "pub")]
     port: Option<u16>,
-    /// File or network path to repo 
+    /// File or network path to repo
     #[getset(get_copy = "pub", set = "pub(crate)")]
     path: &'url str,
     /// If we should print `scheme://` from input or derived during parsing

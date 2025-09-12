@@ -59,23 +59,23 @@ pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
 ///
 /// - Common service hosting with `owner/repo` patterns (e.g. GitHub, Bitbucket)
 /// - Self-hosted repositories (e.g. Codeberg, Gitea)
-/// 
+///
 /// Example:
 ///
 /// ```
 /// use git_url_parse::{GitUrl, GitUrlParseError};
 /// use git_url_parse::types::provider::GenericProvider;
-/// 
+///
 /// let test_url = "git@github.com:tjtelan/git-url-parse-rs.git";
 /// let parsed = GitUrl::parse(test_url).expect("URL parse failed");
-/// 
+///
 /// let provider_info: GenericProvider = parsed.provider_info().unwrap();
-/// 
+///
 /// assert_eq!(provider_info.owner(), "tjtelan");
 /// assert_eq!(provider_info.repo(), "git-url-parse-rs");
 /// assert_eq!(provider_info.fullname(), "tjtelan/git-url-parse-rs");
 /// ```
-/// 
+///
 #[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[getset(get_copy = "pub")]
@@ -134,7 +134,7 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
 /// assert_eq!(provider_info.repo(), "RepoName");
 /// assert_eq!(provider_info.fullname(), "CompanyName/ProjectName/RepoName");
 /// ```
-/// 
+///
 #[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[getset(get_copy = "pub")]
@@ -244,7 +244,7 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for AzureDevOpsProvider<'a> {
 ///     Ok(())
 /// }
 /// ```
-/// 
+///
 #[derive(Clone, Debug, PartialEq, Eq, Default, CopyGetters, CloneGetters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GitLabProvider<'a> {
