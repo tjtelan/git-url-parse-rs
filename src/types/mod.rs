@@ -1,3 +1,8 @@
+//! # GitUrl internal types
+//!
+//! Internal types and parsing logic for Git urls
+//!
+
 mod error;
 mod spec;
 use spec::*;
@@ -9,37 +14,58 @@ use core::str;
 use std::fmt;
 
 use getset::{CloneGetters, CopyGetters, Setters};
+#[cfg(feature = "log")]
+use log::debug;
 use nom::Finish;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "tracing")]
-use tracing::debug;
-
+/// Assigned as a label during parsing for different Git URL types.
+/// Some printing or `GitProvider` parsing behavior are influenced by this type.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub(crate) enum GitUrlParseHint {
+    /// The default status
     #[default]
     Unknown,
+    /// When `ssh` is in the scheme, or a `:` is used as initial path separator
     Sshlike,
+    /// When `file` is in scheme, or filesystem-like relative paths
     Filelike,
+    /// Default network scheme if not `ssh`. If `:` is used as initial path separator in the userinfo
     Httplike,
 }
 
+/// Represents a parsed Git repository url
+///
+/// GitUrl is an input url used by git.
+/// Parsing of the url inspired by rfc3986, but does not strictly cover the spec
+/// Optional, but by default, uses the `url` crate to perform a final validation of the parsing effort
 #[derive(Clone, CopyGetters, CloneGetters, Debug, Default, Setters, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GitUrl<'url> {
+    /// scheme name (i.e. `scheme://`)
     #[getset(get_copy = "pub", set = "pub(crate)")]
     scheme: Option<&'url str>,
+    /// user name userinfo
     #[getset(get_copy = "pub", set = "pub(crate)")]
     user: Option<&'url str>,
+    /// password userinfo provided with `user` (i.e. `user`:`password`@...)
     #[getset(get_copy = "pub", set = "pub(crate)")]
-    token: Option<&'url str>,
+    password: Option<&'url str>,
+    /// The hostname or IP of the repo host
     #[getset(get_copy = "pub")]
     host: Option<&'url str>,
+    /// The port number of the repo host, if specified
     #[getset(get_copy = "pub")]
     port: Option<u16>,
+    /// File or network path to repo 
     #[getset(get_copy = "pub", set = "pub(crate)")]
     path: &'url str,
-    /// Include scheme:// when printing url
+    /// If we should print `scheme://` from input or derived during parsing
     #[getset(get_copy = "pub", set = "pub(crate)")]
     print_scheme: bool,
+    /// Pattern style of url derived during parsing
     #[getset(get_copy = "pub(crate)")]
     hint: GitUrlParseHint,
 }
@@ -54,14 +80,19 @@ impl fmt::Display for GitUrl<'_> {
 }
 
 impl<'url> GitUrl<'url> {
+    /// Wrapper function for the default output mode via [`Display`](std::fmt::Display) trait
     fn display(&self) -> String {
         self.build_string(false)
     }
 
+    /// Wrapper function for printing a url for the [`url`](https://docs.rs/url/latest/url/) crate
+    #[cfg(feature = "url")]
     fn url_compat_display(&self) -> String {
         self.build_string(true)
     }
 
+    /// This method rebuilds the printable GitUrl from its components.
+    /// `url_compat` results in output that can be parsed by the `url` crate
     fn build_string(&self, url_compat: bool) -> String {
         let scheme = if self.print_scheme() || url_compat {
             if let Some(scheme) = self.scheme() {
@@ -73,10 +104,10 @@ impl<'url> GitUrl<'url> {
             String::new()
         };
 
-        let auth_info = match (self.user(), self.token()) {
-            (Some(user), Some(token)) => format!("{user}:{token}@"),
+        let auth_info = match (self.user(), self.password()) {
+            (Some(user), Some(password)) => format!("{user}:{password}@"),
             (Some(user), None) => format!("{user}@",),
-            (None, Some(token)) => format!("{token}@"),
+            (None, Some(password)) => format!("{password}@"),
             (None, None) => String::new(),
         };
 
@@ -110,17 +141,27 @@ impl<'url> GitUrl<'url> {
 }
 
 impl<'url> GitUrl<'url> {
-    /// Returns `GitUrl` after removing `user` and `token` values
-    /// Intended use-case is for non-destructive printing GitUrl excluding any embedded auth info
+    /// Returns `GitUrl` after removing all user info values
     pub fn trim_auth(&self) -> GitUrl {
         let mut new_giturl = self.clone();
         new_giturl.set_user(None);
-        new_giturl.set_token(None);
-        #[cfg(feature = "tracing")]
-        debug!(?new_giturl);
+        new_giturl.set_password(None);
+        #[cfg(feature = "log")]
+        debug!("{new_giturl:?}");
         new_giturl
     }
 
+    /// Returns a `Result<GitUrl>` after parsing `input` for metadata
+    ///
+    /// ```
+    /// # use git_url_parse::GitUrl;
+    /// # use git_url_parse::types::provider::GenericProvider;
+    /// # fn main() -> Result<(), git_url_parse::GitUrlParseError> {
+    /// let http_url = GitUrl::parse("https://github.com/tjtelan/git-url-parse-rs.git")?;
+    /// let ssh_url = GitUrl::parse("git@github.com:tjtelan/git-url-parse-rs.git")?;
+    /// # Ok(())
+    /// #  }
+    /// ```
     pub fn parse(input: &'url str) -> Result<Self, GitUrlParseError> {
         // Error if there are null bytes within the url
         // https://github.com/tjtelan/git-url-parse-rs/issues/16
@@ -131,11 +172,11 @@ impl<'url> GitUrl<'url> {
         let (_input, url_spec_parser) = UrlSpecParser::parse(input).finish().unwrap_or_default();
 
         let mut scheme = url_spec_parser.scheme();
-        let user = url_spec_parser.heir_part().authority().userinfo().user();
-        let token = url_spec_parser.heir_part().authority().userinfo().token();
-        let host = url_spec_parser.heir_part().authority().host();
-        let port = url_spec_parser.heir_part().authority().port();
-        let mut path = url_spec_parser.heir_part().path();
+        let user = url_spec_parser.hier_part().authority().userinfo().user();
+        let password = url_spec_parser.hier_part().authority().userinfo().token();
+        let host = url_spec_parser.hier_part().authority().host();
+        let port = url_spec_parser.hier_part().authority().port();
+        let mut path = url_spec_parser.hier_part().path();
 
         // We will respect whether scheme was initially set
         let print_scheme = scheme.is_some();
@@ -152,15 +193,15 @@ impl<'url> GitUrl<'url> {
                 }
             }
         } else if user.is_none()
-            && token.is_none()
+            && password.is_none()
             && host.is_none()
             && port.is_none()
             && !path.is_empty()
         {
             // if we only have a path => file
             GitUrlParseHint::Filelike
-        } else if user.is_some() && token.is_some() {
-            // If we have a user and token => http
+        } else if user.is_some() && password.is_some() {
+            // If we have a user and password => http
             GitUrlParseHint::Httplike
         } else if path.starts_with(':') {
             // If path starts with a colon => ssh
@@ -191,7 +232,7 @@ impl<'url> GitUrl<'url> {
         let git_url = GitUrl {
             scheme,
             user,
-            token,
+            password,
             host,
             port,
             path,
@@ -199,11 +240,23 @@ impl<'url> GitUrl<'url> {
             hint,
         };
 
-        let _check = git_url.is_valid()?;
+        git_url.is_valid()?;
 
         Ok(git_url)
     }
 
+    /// ```
+    /// use git_url_parse::GitUrl;
+    /// use git_url_parse::types::provider::GenericProvider;
+    ///
+    /// # fn main() -> Result<(), git_url_parse::GitUrlParseError> {
+    /// let ssh_url = GitUrl::parse("git@github.com:tjtelan/git-url-parse-rs.git")?;
+    /// let provider : GenericProvider = ssh_url.provider_info()?;
+    /// # assert_eq!(provider.owner(), "tjtelan");
+    /// # assert_eq!(provider.repo(), "git-url-parse-rs");
+    ///
+    /// # Ok(())
+    /// # }
     pub fn provider_info<T>(&self) -> Result<T, GitUrlParseError>
     where
         T: provider::GitProvider<GitUrl<'url>, GitUrlParseError>,
@@ -211,62 +264,67 @@ impl<'url> GitUrl<'url> {
         T::from_git_url(self)
     }
 
+    /// This is called as the last step before returning a `GitUrl` to the user
     fn is_valid(&self) -> Result<(), GitUrlParseError> {
         // Last chance validation
 
-        //println!("{self:#?}");
+        #[cfg(feature = "log")]
+        debug!("Validating parsing results {self:#?}");
 
         if self.path().is_empty() {
             return Err(GitUrlParseError::InvalidPathEmpty);
         }
 
-        // There's an edge case we don't cover: ssh urls using ports + absolute paths
+        // There's an edge case we don't properly cover: ssh urls using ports + absolute paths
         // https://mslinn.com/git/040-git-urls.html - describes this pattern, if we decide to parse for it
 
         // only ssh paths start with ':'
         if self.hint() != GitUrlParseHint::Sshlike && self.path.starts_with(':') {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
-                debug!("{}", self.hint());
-                debug!(self.path);
+                debug!("{:?}", self.hint());
+                debug!("{:?}", self.path());
                 debug!("Only sshlike url path starts with ':'");
-                debug!("path starts with ':'?", self.path.starts_with(':'));
+                debug!("path starts with ':'? {}", self.path.starts_with(':'));
             }
 
             return Err(GitUrlParseError::InvalidPortNumber);
         }
 
-        // if we are not httplike, we shouldn't have tokens
-        if self.hint() != GitUrlParseHint::Httplike && self.token().is_some() {
-            #[cfg(feature = "tracing")]
+        // if we are not httplike, we shouldn't have passwords
+        if self.hint() != GitUrlParseHint::Httplike && self.password().is_some() {
+            #[cfg(feature = "log")]
             {
-                debug!("{}", self.hint());
-                debug!("Token support only for httplike url", self.token());
+                debug!("{:?}", self.hint());
+                debug!("password support only for httplike url: {:?}", self.token());
             }
-            return Err(GitUrlParseError::InvalidTokenUnsupported);
+            return Err(GitUrlParseError::InvalidPasswordUnsupported);
         }
 
         // if we are filelike, we should only have paths
         if self.hint() == GitUrlParseHint::Filelike
             && (self.user().is_some()
-                || self.token().is_some()
+                || self.password().is_some()
                 || self.host().is_some()
                 || self.port().is_some()
                 || self.path().is_empty())
         {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
                 debug!(
-                    "Only scheme and path expected to have values set for filelike urls",
-                    ?self
+                    "Only scheme and path expected to have values set for filelike urls {:?}",
+                    self
                 );
             }
             return Err(GitUrlParseError::InvalidFilePattern);
         }
 
-        // Since we don't fully implement any spec, we'll rely on the url crate
-        println!("{:#?}", self.url_compat_display());
-        let _u = url::Url::parse(&self.url_compat_display())?;
+        #[cfg(feature = "url")]
+        {
+            // Since we don't fully implement any spec, we'll rely on the url crate
+            println!("{:#?}", self.url_compat_display());
+            let _u = url::Url::parse(&self.url_compat_display())?;
+        }
 
         Ok(())
     }

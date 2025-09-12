@@ -1,4 +1,11 @@
+//! # GitUrl url spec parser
+//!
+//! Internal structs with RFC 3968 parsing logic for Git urls
+//!
+
 use getset::CopyGetters;
+#[cfg(feature = "log")]
+use log::debug;
 use nom::Finish;
 use nom::branch::alt;
 use nom::bytes::complete::{tag, take_while};
@@ -9,11 +16,14 @@ use nom::multi::{many0, many1};
 use nom::sequence::{pair, preceded, separated_pair, terminated};
 use nom::{IResult, Parser, combinator::opt};
 
+/// Top-level struct for RFC 3986 spec parser
 #[derive(Debug, Default, Clone, Copy, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub(crate) struct UrlSpecParser<'url> {
+    /// RFC 3986 scheme
     pub(crate) scheme: Option<&'url str>,
-    pub(crate) heir_part: UrlHeirPart<'url>,
+    /// RFC 3986 hier-part
+    pub(crate) hier_part: UrlHierPart<'url>,
 }
 
 impl<'url> UrlSpecParser<'url> {
@@ -30,13 +40,17 @@ impl<'url> UrlSpecParser<'url> {
         let (input, scheme) = Self::parse_scheme.parse(input).finish().unwrap_or_default();
         let (input, heir_part) = Self::parse_hier_part(input).finish().unwrap_or_default();
 
-        let parsed = UrlSpecParser { scheme, heir_part };
+        let parsed = UrlSpecParser {
+            scheme,
+            hier_part: heir_part,
+        };
 
         Ok((input, parsed))
     }
 
+    /// RFC 3986 scheme
     fn parse_scheme(input: &'url str) -> IResult<&'url str, Option<&'url str>> {
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Looking ahead before parsing for scheme");
         }
@@ -59,15 +73,15 @@ impl<'url> UrlSpecParser<'url> {
         );
 
         if check.parse(input).is_err() {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
-                debug!("Look ahead check for scheme failed", ?self.token());
+                debug!("Look ahead check for scheme failed");
             }
 
             return Ok((input, None));
         }
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Look ahead check passed, parsing for scheme");
         }
@@ -95,21 +109,22 @@ impl<'url> UrlSpecParser<'url> {
         )
         .parse(input)?;
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!(?input);
-            debug!(?scheme);
+            debug!("{input:?}");
+            debug!("{scheme:?}");
         }
 
         Ok((input, scheme))
     }
 
+    /// RFC 3986 hier-part
     // https://datatracker.ietf.org/doc/html/rfc3986#section-3.2
     // The rfc says parsing the "//" part of the uri belongs to the hier-part parsing
     // but we only support common internet protocols, file paths, but not other "baseless" ones
     // so it is sensible for this move it with scheme parsing to support git user service urls
-    fn parse_hier_part(input: &'url str) -> IResult<&'url str, UrlHeirPart<'url>> {
-        #[cfg(feature = "tracing")]
+    fn parse_hier_part(input: &'url str) -> IResult<&'url str, UrlHierPart<'url>> {
+        #[cfg(feature = "log")]
         {
             debug!("Parsing for heir-part");
         }
@@ -130,19 +145,20 @@ impl<'url> UrlSpecParser<'url> {
         )
         .parse(input)?;
 
-        let hier_part = UrlHeirPart { authority, path };
+        let hier_part = UrlHierPart { authority, path };
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!(?input);
-            debug!(?heir_part);
+            debug!("{:?}", input);
+            debug!("{:?}", hier_part);
         }
 
         Ok((input, hier_part))
     }
 
+    /// RFC 3986 authority
     fn parse_authority(input: &'url str) -> IResult<&'url str, UrlAuthority<'url>> {
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Parsing for Authority");
         }
@@ -151,7 +167,7 @@ impl<'url> UrlSpecParser<'url> {
         let (input, userinfo) = Self::parse_userinfo(input)?;
 
         // Host
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Looking ahead for windows-style path vs host");
         }
@@ -167,7 +183,7 @@ impl<'url> UrlSpecParser<'url> {
         .parse(input);
 
         if check.is_ok() {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
                 debug!(
                     "Host check failed. Found potential windows-style path while looking for host"
@@ -177,7 +193,7 @@ impl<'url> UrlSpecParser<'url> {
             return Ok((input, UrlAuthority::default()));
         }
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Parsing for host");
         }
@@ -187,8 +203,8 @@ impl<'url> UrlSpecParser<'url> {
             opt(verify(
                 recognize(take_while(|c: char| reg_name_uri_chars(c))),
                 |s: &str| {
-                    let has_alphanum = s.chars().any(is_alphanum);
-                    let starts_with_alphanum = s.chars().next().is_some_and(is_alphanum);
+                    let has_alphanum = s.chars().any(char::is_alphanumeric);
+                    let starts_with_alphanum = s.chars().next().is_some_and(char::is_alphanumeric);
 
                     has_alphanum && starts_with_alphanum && !s.is_empty()
                 },
@@ -196,9 +212,9 @@ impl<'url> UrlSpecParser<'url> {
         )
         .parse(input)?;
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!("host found", ?host);
+            debug!("host found: {host:?}");
         }
 
         // Optional: port
@@ -210,18 +226,19 @@ impl<'url> UrlSpecParser<'url> {
             port,
         };
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!(?input);
-            debug!(?authority);
+            debug!("{input:?}");
+            debug!("{authority:?}");
         }
 
         Ok((input, authority))
     }
 
+    /// RFC 3986 userinfo
     fn parse_userinfo(authority_input: &'url str) -> IResult<&'url str, UrlUserInfo<'url>> {
         // Peek for username@
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Checking for for Userinfo");
         }
@@ -235,7 +252,7 @@ impl<'url> UrlSpecParser<'url> {
         );
 
         if check.parse(authority_input).is_err() {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
                 debug!("Userinfo check failed");
             }
@@ -255,7 +272,7 @@ impl<'url> UrlSpecParser<'url> {
         .parse(authority_input)?;
 
         let (authority_input, _) = if userinfo.is_some() {
-            #[cfg(feature = "tracing")]
+            #[cfg(feature = "log")]
             {
                 debug!("Userinfo found. Parsing for '@'");
             }
@@ -269,7 +286,7 @@ impl<'url> UrlSpecParser<'url> {
         // Break down userinfo into user and token
         let (user, token) = if let Some(userinfo) = userinfo {
             if userinfo.contains(":") {
-                #[cfg(feature = "tracing")]
+                #[cfg(feature = "log")]
                 {
                     debug!("Continue break down userinfo into user:token");
                 }
@@ -298,17 +315,18 @@ impl<'url> UrlSpecParser<'url> {
 
         let userinfo = UrlUserInfo { user, token };
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!(?input);
-            debug!(?userinfo);
+            debug!("{authority_input:?}");
+            debug!("{userinfo:?}");
         }
 
         Ok((authority_input, userinfo))
     }
 
+    /// RFC 3986 port
     fn parse_port(authority_input: &'url str) -> IResult<&'url str, Option<u16>> {
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
             debug!("Parsing port");
         }
@@ -329,17 +347,16 @@ impl<'url> UrlSpecParser<'url> {
         )
         .parse(authority_input)?;
 
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!(?input);
-            debug!(?port);
+            debug!("{authority_input:?}");
+            debug!("{port:?}");
         }
 
         Ok((input, port))
     }
 
-    // This will get absolute paths.
-    // todo: test for empty and start with "//"
+    /// RFC 3986 path-abempty
     fn path_abempty_parser(
     ) -> impl Parser<
         &'url str,
@@ -348,9 +365,9 @@ impl<'url> UrlSpecParser<'url> {
         >>::Output,
         Error = nom::error::Error<&'url str>,
     >{
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!("parsing abempty path", ?path);
+            debug!("parsing abempty path");
         }
 
         // Starts with '/' or empty
@@ -363,6 +380,7 @@ impl<'url> UrlSpecParser<'url> {
         )
     }
 
+    /// Not part of RFC 3986 - ssh-based url path
     fn path_ssh_parser(
     ) -> impl Parser<
         &'url str,
@@ -371,9 +389,9 @@ impl<'url> UrlSpecParser<'url> {
         >>::Output,
         Error = nom::error::Error<&'url str>,
     >{
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!("Parsing ssh path", ?path);
+            debug!("Parsing ssh path");
         }
 
         context(
@@ -386,6 +404,7 @@ impl<'url> UrlSpecParser<'url> {
         )
     }
 
+    /// RFC 3986 path-rootless
     fn path_rootless_parser(
     ) -> impl Parser<
         &'url str,
@@ -394,9 +413,9 @@ impl<'url> UrlSpecParser<'url> {
         >>::Output,
         Error = nom::error::Error<&'url str>,
     >{
-        #[cfg(feature = "tracing")]
+        #[cfg(feature = "log")]
         {
-            debug!("Parsing rootless path", ?path);
+            debug!("Parsing rootless path");
         }
 
         context(
@@ -409,46 +428,56 @@ impl<'url> UrlSpecParser<'url> {
     }
 }
 
+/// RFC 3986 userinfo
 #[derive(Debug, Default, Clone, Copy, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub(crate) struct UrlUserInfo<'url> {
+    /// RFC 3986 Userinfo
     pub(crate) user: Option<&'url str>,
+    /// Non-spec, deprecated
     pub(crate) token: Option<&'url str>,
 }
 
+/// RFC 3986 authority
 #[derive(Debug, Default, Clone, Copy, CopyGetters)]
 #[getset(get_copy = "pub")]
 pub(crate) struct UrlAuthority<'url> {
+    /// RFC 3986 Username, non-spec token
     pub(crate) userinfo: UrlUserInfo<'url>,
+    /// RFC 3986 Host
     pub(crate) host: Option<&'url str>,
+    /// RFC 3986 Port
     pub(crate) port: Option<u16>,
 }
 
+/// RFC 3986 hier-part
 #[derive(Debug, Default, Clone, Copy, CopyGetters)]
 #[getset(get_copy = "pub")]
-pub(crate) struct UrlHeirPart<'url> {
+pub(crate) struct UrlHierPart<'url> {
+    /// RFC 3986 authority
     pub(crate) authority: UrlAuthority<'url>,
+    /// RFC 3986 relative-part
     pub(crate) path: &'url str,
 }
 
+/// RFC 3986 pchar
 pub(crate) fn pchar_uri_chars(c: char) -> bool {
     // unreserved / pct-encoded (not implemented) / sub-delims / ":" / "@"
     unreserved_uri_chars(c) || subdelims_uri_chars(c) || c == ':' || c == '@'
 }
 
+/// RFC 3986 reg-name
 pub(crate) fn reg_name_uri_chars(c: char) -> bool {
     // *( unreserved / pct-encoded (not implemented) / sub-delims )
     unreserved_uri_chars(c) || subdelims_uri_chars(c)
 }
 
+/// RFC 3986 unreserved
 pub(crate) fn unreserved_uri_chars(c: char) -> bool {
-    is_alphanum(c) || c == '-' || c == '.' || c == '_' || c == '~'
+    c.is_alphanumeric() || c == '-' || c == '.' || c == '_' || c == '~'
 }
 
-pub(crate) fn is_alphanum(c: char) -> bool {
-    c.is_ascii_alphabetic() || c.is_ascii_digit()
-}
-
+/// RFC 3986 sub-delims (mostly)
 pub(crate) fn subdelims_uri_chars(c: char) -> bool {
     c == '!'
         || c == '$'

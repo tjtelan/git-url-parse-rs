@@ -4,7 +4,7 @@ categories = ["parser-implementations"]
 description = "A parser for git repo urls"
 documentation = "https://docs.rs/git-url-parse"
 edition = "2024"
-keywords = ["git", "url", "parsing"]
+keywords = ["git", "url", "parser"]
 license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
@@ -13,23 +13,22 @@ version = "0.4.6"
 rust-version = "1.82"
 
 [features]
-default = []
-tracing = ["dep:tracing"]
-#filepath
-#validate
-#provider
+default = ["url"]
+# Enable serde 
+serde = ["dep:serde"]
+# Enable debugging logging with `log` crate 
+log = ["dep:log"]
+# Enable url parsing validation with `url` crate
+url = ["dep:url"]
 
 [dependencies]
-tracing = { version = "0.1", optional = true }
 nom = "8"
-thiserror = "2"
 getset = "0.1.6"
-url = { version = "2.5" }
-#strum = { version = "0.27", features = ["derive"] }
-
-#derive_builder = "0.20"
-#typed-path = "0.11.0"
+thiserror = "2"
+serde = { version = "1", features = ["derive"], optional = true }
+log = { version = "0.4", optional = true }
+url = { version = "2.5", optional = true }
 
 [dev-dependencies]
-env_logger = "0.11"
-regex = "1.10"
+env_logger = "*"
+log = "*" 
