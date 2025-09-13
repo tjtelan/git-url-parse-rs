@@ -1,5 +1,37 @@
-changelog-updated:
+Documentation:
+- changed-files:
+  - README.md
+
+Changelog:
+- changed-files:
   - CHANGELOG.md
 
-msrv-updated:
-  - .github/assets/msrv-badge.svg
+CI:
+- changed-files:
+  - any-glob-to-any-file:
+    - .github/* 
+
+Configs:
+- changed-files:
+  - Cargo.toml
+  - cliff.toml 
+  - .gitignore
+
+Examples:
+- changed-files:
+  - any-glob-to-any-file:
+    - examples/*
+
+Source:
+- changed-files:
+  - any-glob-to-any-file:
+    - src/*
+
+Tests:
+- changed-files:
+  - any-glob-to-any-file:
+    - tests/*
+
+License:
+- changed-files:
+  - LICENSE
