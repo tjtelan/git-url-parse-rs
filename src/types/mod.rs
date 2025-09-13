@@ -296,7 +296,10 @@ impl<'url> GitUrl<'url> {
             #[cfg(feature = "log")]
             {
                 debug!("{:?}", self.hint());
-                debug!("password support only for httplike url: {:?}", self.token());
+                debug!(
+                    "password support only for httplike url: {:?}",
+                    self.password()
+                );
             }
             return Err(GitUrlParseError::InvalidPasswordUnsupported);
         }
