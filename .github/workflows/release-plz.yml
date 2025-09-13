@@ -64,7 +64,7 @@ jobs:
       - name: Install cargo-rdme and update readme
         run: |
           cargo install cargo-rdme
-          cargo rdme
+          cargo rdme | true
       - name: Update msrv and/or readme in the release PR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
