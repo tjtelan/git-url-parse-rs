@@ -77,6 +77,6 @@ jobs:
             gh pr checkout $pr_number
             # change "echo" with your commands
             git add .
-            git commit -m "ci: Update msrv and/or readme"
+            git commit -m "ci: Update msrv and/or readme" | true
             git push
           fi
