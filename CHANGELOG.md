@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.4.6](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.5...v0.4.6) - 2025-09-13
+
+### Fixed
+
+- prevent panic when parsing a URL with no path ([#55](https://github.com/tjtelan/git-url-parse-rs/pull/55))
+
+### Other
+
+- Add release-plz to CI
+- Enable default features for the url crate ([#54](https://github.com/tjtelan/git-url-parse-rs/pull/54))
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [0.4.5](https://github.com/tjtelan/git-url-parse-rs/tree/v0.4.5) - 2024-09-06
 
 ### CI
