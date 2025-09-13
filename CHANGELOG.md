@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.5.0...v0.5.1) - 2025-09-13
+
+### Other
+
+- Update release-plz.yml ([#65](https://github.com/tjtelan/git-url-parse-rs/pull/65))
+- Remove debug print ([#63](https://github.com/tjtelan/git-url-parse-rs/pull/63))
+
 ## [0.5.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.6...v0.5.0) - 2025-09-13
 
 ### Added
