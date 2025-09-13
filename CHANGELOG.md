@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.6...v0.5.0) - 2025-09-13
+
+### Added
+
+- Reimplement `GitUrl` with `nom` ([#61](https://github.com/tjtelan/git-url-parse-rs/pull/61))
+
 ## [0.4.6](https://github.com/tjtelan/git-url-parse-rs/compare/v0.4.5...v0.4.6) - 2025-09-13
 
 ### Fixed
