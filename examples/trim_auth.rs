@@ -25,7 +25,7 @@ fn main() -> Result<(), GitUrlParseError> {
         println!("Original:         {}", test_url);
         println!(
             "Parsed + Trimmed: {}\n",
-            GitUrl::parse(test_url)?.trim_auth()
+            GitUrl::parse(test_url).unwrap().trim_auth()
         );
     }
     Ok(())

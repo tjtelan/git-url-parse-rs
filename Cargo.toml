@@ -1,26 +1,34 @@
 [package]
 authors = ["T.J. Telan <t.telan@gmail.com>"]
-categories = ["parser-implementations", "encoding"]
-description = "A parser for git repo urls based on url crate"
+categories = ["parser-implementations"]
+description = "A parser for urls used by git"
 documentation = "https://docs.rs/git-url-parse"
-edition = "2021"
-keywords = ["git", "url", "parsing", "normalize"]
+edition = "2024"
+keywords = ["git", "url", "parser"]
 license = "MIT"
 name = "git-url-parse"
 readme = "README.md"
 repository = "https://github.com/tjtelan/git-url-parse-rs"
 version = "0.4.6"
-rust-version = "1.82"
+rust-version = "1.85"
 
 [features]
-default = []
-tracing = ["dep:tracing"]
+default = ["url"]
+# Enable Serialize/Deserialize on structs with `serde` crate
+serde = ["dep:serde"]
+# Enable debugging logging with `log` crate 
+log = ["dep:log"]
+# Enable url parsing validation with `url` crate
+url = ["dep:url"]
 
 [dependencies]
-tracing = { version = "0.1", optional = true }
-url = { version = "2.2" }
-strum = { version = "^0.27", features = ["derive"] }
-thiserror = "^2.0"
+nom = "8"
+getset = "0.1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"], optional = true }
+log = { version = "0.4", optional = true }
+url = { version = "2.5", optional = true }
 
 [dev-dependencies]
-env_logger = "^0.11"
+env_logger = "0.11"
+log = "0.4" 
