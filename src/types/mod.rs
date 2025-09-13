@@ -325,7 +325,6 @@ impl<'url> GitUrl<'url> {
         #[cfg(feature = "url")]
         {
             // Since we don't fully implement any spec, we'll rely on the url crate
-            println!("{:#?}", self.url_compat_display());
             let _u = url::Url::parse(&self.url_compat_display())?;
         }
 
