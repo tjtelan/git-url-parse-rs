@@ -91,14 +91,14 @@ cargo add git-url-parse
 
 ### Cargo Features
 
-#### `log` 
+#### `log`
 Enable for internal `debug!` output from [log](https://docs.rs/log/latest)
-#### `serde` 
+#### `serde`
 Enable for [serde](https://docs.rs/serde/latest/) `Serialize`/`Deserialize` on [`GitUrl`](https://docs.rs/git-url-parse/latest/git_url_parse/types/struct.GitUrl.html)
-#### `url` 
+#### `url`
 (**enabled by default**)
 
-Uses [url](https://docs.rs/url/latest/) during parsing for full url validation 
+Uses [url](https://docs.rs/url/latest/) during parsing for full url validation
 
 <!-- cargo-rdme end -->
 
