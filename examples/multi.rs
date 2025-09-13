@@ -19,6 +19,8 @@ fn main() -> Result<(), GitUrlParseError> {
         "..\\test_repo",
         "git@ssh.dev.azure.com:v3/CompanyName/ProjectName/RepoName",
         "https://CompanyName@dev.azure.com/CompanyName/ProjectName/_git/RepoName",
+        "https://your_username@bitbucket.org/workspace_ID/repo_name.git",
+        "ssh://git@bitbucket.org/workspace_ID/repo_name.git",
     ];
 
     for test_url in test_vec {
