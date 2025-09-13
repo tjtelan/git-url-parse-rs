@@ -1,6 +1,6 @@
 [![Crates.io](https://img.shields.io/crates/v/git-url-parse)](https://crates.io/crates/git-url-parse)
-![Crates.io MSRV](https://img.shields.io/crates/msrv/git-url-parse?label=rust-version)
-[![Crates.io Total Downloads](https://img.shields.io/crates/d/git-url-parse?label=crates.io)](https://crates.io/crates/git-url-parse)
+[![Crates.io Total Downloads](https://img.shields.io/crates/d/git-url-parse?label=Crates.io%20Downloads)](https://crates.io/crates/git-url-parse)
+![Crates.io MSRV](https://img.shields.io/crates/msrv/git-url-parse?label=Min%20Supported%20Rust%20version)
 [![Github actions CI status](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/tjtelan/git-url-parse-rs/actions/workflows/ci.yml)
 [![docs.rs](https://docs.rs/git-url-parse/badge.svg)](https://docs.rs/git-url-parse/)
 [![License](https://img.shields.io/github/license/tjtelan/git-url-parse-rs)](LICENSE)
