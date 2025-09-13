@@ -29,7 +29,7 @@ jobs:
           - name: Build
             subcommand: build --release --all-features --verbose
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Stable with rustfmt and clippy
         uses: dtolnay/rust-toolchain@stable 
         with:
