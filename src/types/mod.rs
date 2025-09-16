@@ -12,6 +12,7 @@ pub use error::GitUrlParseError;
 
 use core::str;
 use std::fmt;
+use url::Url;
 
 use getset::{CloneGetters, CopyGetters, Setters};
 #[cfg(feature = "log")]
@@ -137,6 +138,24 @@ impl<'url> GitUrl<'url> {
 
         let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
         git_url_str
+    }
+}
+
+#[cfg(feature = "url")]
+impl<'url> TryFrom<&GitUrl<'url>> for Url {
+    type Error = url::ParseError;
+    fn try_from(value: &GitUrl) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        Url::parse(&value.url_compat_display())
+    }
+}
+
+#[cfg(feature = "url")]
+impl<'url> TryFrom<GitUrl<'url>> for Url {
+    type Error = url::ParseError;
+    fn try_from(value: GitUrl) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        Url::parse(&value.url_compat_display())
     }
 }
 
@@ -325,7 +344,7 @@ impl<'url> GitUrl<'url> {
         #[cfg(feature = "url")]
         {
             // Since we don't fully implement any spec, we'll rely on the url crate
-            let _u = url::Url::parse(&self.url_compat_display())?;
+            let _u: Url = self.try_into()?;
         }
 
         Ok(())
