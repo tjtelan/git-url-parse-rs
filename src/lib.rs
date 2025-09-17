@@ -50,7 +50,7 @@
 //!     #[derive(Debug, Clone, PartialEq, Eq)]
 //!     struct CustomProvider;
 //!     
-//!     impl GitProvider<GitUrl<'_>, GitUrlParseError> for CustomProvider {
+//!     impl GitProvider<GitUrl, GitUrlParseError> for CustomProvider {
 //!         fn from_git_url(_url: &GitUrl) -> Result<Self, GitUrlParseError> {
 //!             // Your custom provider parsing here
 //!             Ok(Self)
