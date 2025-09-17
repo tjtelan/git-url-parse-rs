@@ -12,7 +12,7 @@
 use crate::types::GitUrlParseHint;
 use crate::{GitUrl, GitUrlParseError};
 
-use getset::{CloneGetters, CopyGetters};
+use getset::{CloneGetters, Getters};
 use nom::Parser;
 use nom::bytes::complete::{is_not, tag, take_until};
 use nom::combinator::opt;
@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 ///  #[derive(Debug, Clone, PartialEq, Eq)]
 ///  struct MyCustomProvider;
 ///
-///  impl GitProvider<GitUrl<'_>, GitUrlParseError> for MyCustomProvider {
+///  impl GitProvider<GitUrl, GitUrlParseError> for MyCustomProvider {
 ///      fn from_git_url(_url: &GitUrl) -> Result<Self, GitUrlParseError> {
 ///          // Do your custom parsing here with your GitUrl
 ///          Ok(Self)
@@ -76,17 +76,17 @@ pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
 /// assert_eq!(provider_info.fullname(), "tjtelan/git-url-parse-rs");
 /// ```
 ///
-#[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
+#[derive(Debug, PartialEq, Eq, Clone, Getters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[getset(get_copy = "pub")]
-pub struct GenericProvider<'a> {
+#[getset(get = "pub")]
+pub struct GenericProvider {
     /// Repo owner
-    owner: &'a str,
+    owner: String,
     /// Repo name
-    repo: &'a str,
+    repo: String,
 }
 
-impl<'a> GenericProvider<'a> {
+impl GenericProvider {
     /// Parse the most common form of git url by offered by git providers
     fn parse_path(input: &str) -> Result<(&str, GenericProvider), GitUrlParseError> {
         let (input, _) = opt(tag("/")).parse(input)?;
@@ -95,7 +95,13 @@ impl<'a> GenericProvider<'a> {
         } else {
             separated_pair(is_not("/"), tag("/"), is_not("/")).parse(input)?
         };
-        Ok((input, GenericProvider { owner: user, repo }))
+        Ok((
+            input,
+            GenericProvider {
+                owner: user.to_string(),
+                repo: repo.to_string(),
+            },
+        ))
     }
 
     /// Helper method to get the full name of a repo: `{owner}/{repo}`
@@ -104,8 +110,8 @@ impl<'a> GenericProvider<'a> {
     }
 }
 
-impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
-    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
+impl GitProvider<GitUrl, GitUrlParseError> for GenericProvider {
+    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
         if url.hint() == GitUrlParseHint::Filelike {
             return Err(GitUrlParseError::ProviderUnsupported);
         }
@@ -138,19 +144,19 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GenericProvider<'a> {
 /// assert_eq!(provider_info.fullname(), "CompanyName/ProjectName/RepoName");
 /// ```
 ///
-#[derive(Debug, PartialEq, Eq, Clone, CopyGetters)]
+#[derive(Debug, PartialEq, Eq, Clone, Getters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[getset(get_copy = "pub")]
-pub struct AzureDevOpsProvider<'a> {
+#[getset(get = "pub")]
+pub struct AzureDevOpsProvider {
     /// Azure Devops organization name
-    org: &'a str,
+    org: String,
     /// Azure Devops project name
-    project: &'a str,
+    project: String,
     /// Azure Devops repo name
-    repo: &'a str,
+    repo: String,
 }
 
-impl<'a> AzureDevOpsProvider<'a> {
+impl AzureDevOpsProvider {
     /// Helper method to get the full name of a repo: `{org}/{project}/{repo}`
     pub fn fullname(&self) -> String {
         format!("{}/{}/{}", self.org, self.project, self.repo)
@@ -173,7 +179,14 @@ impl<'a> AzureDevOpsProvider<'a> {
         )
         .parse(input)?;
 
-        Ok((input, AzureDevOpsProvider { org, project, repo }))
+        Ok((
+            input,
+            AzureDevOpsProvider {
+                org: org.to_string(),
+                project: project.to_string(),
+                repo: repo.to_string(),
+            },
+        ))
     }
 
     /// Parse the path of an ssh url for Azure Devops patterns
@@ -194,12 +207,19 @@ impl<'a> AzureDevOpsProvider<'a> {
         )
         .parse(input)?;
 
-        Ok((input, AzureDevOpsProvider { org, project, repo }))
+        Ok((
+            input,
+            AzureDevOpsProvider {
+                org: org.to_string(),
+                project: project.to_string(),
+                repo: repo.to_string(),
+            },
+        ))
     }
 }
 
-impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for AzureDevOpsProvider<'a> {
-    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
+impl GitProvider<GitUrl, GitUrlParseError> for AzureDevOpsProvider {
+    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
         let path = url.path();
 
         let parsed = if url.hint() == GitUrlParseHint::Httplike {
@@ -248,21 +268,32 @@ impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for AzureDevOpsProvider<'a> {
 /// }
 /// ```
 ///
-#[derive(Clone, Debug, PartialEq, Eq, Default, CopyGetters, CloneGetters)]
+#[derive(Clone, Debug, PartialEq, Eq, Default, Getters, CloneGetters)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct GitLabProvider<'a> {
+pub struct GitLabProvider {
     /// Repo owner
-    #[getset(get_copy = "pub")]
-    owner: &'a str,
+    #[getset(get = "pub")]
+    owner: String,
     /// Gitlab subgroups
-    #[getset(get_clone = "pub")]
-    subgroup: Option<Vec<&'a str>>,
+    //#[getset(get_clone = "pub")]
+    subgroup: Option<Vec<String>>,
     /// Repo name
-    #[getset(get_copy = "pub")]
-    repo: &'a str,
+    #[getset(get = "pub")]
+    repo: String,
 }
 
-impl<'a> GitLabProvider<'a> {
+impl GitLabProvider {
+    /// Repo owner
+    /// Gitlab subgroups
+    pub fn subgroup(&self) -> Option<Vec<&str>> {
+        if let Some(s) = &self.subgroup {
+            let subgroup_vec: Vec<&str> = s.iter().map(|s| s.as_str()).collect();
+            Some(subgroup_vec)
+        } else {
+            None
+        }
+    }
+
     /// Helper method to get the full name of a repo: `{owner}/{repo}` or `{owner}/{subgroups}/{repo}`
     pub fn fullname(&self) -> String {
         if let Some(subgroup) = self.subgroup() {
@@ -293,13 +324,19 @@ impl<'a> GitLabProvider<'a> {
         }
 
         // Last part is the repo
-        let repo = parts[parts.len() - 1];
+        let repo = parts[parts.len() - 1].to_string();
 
         // Everything before the last part is the owner/subgroups
         let (owner, subgroup) = if parts.len() > 2 {
-            (parts[0], Some(parts[1..parts.len() - 1].to_vec()))
+            let subgroup: Vec<String> = parts[1..(parts.len() - 1)]
+                .iter()
+                .copied()
+                .map(|s| s.to_string())
+                .collect();
+
+            (parts[0].to_string(), Some(subgroup))
         } else {
-            (parts[0], None)
+            (parts[0].to_string(), None)
         };
 
         Ok((
@@ -313,8 +350,8 @@ impl<'a> GitLabProvider<'a> {
     }
 }
 
-impl<'a> GitProvider<GitUrl<'a>, GitUrlParseError> for GitLabProvider<'a> {
-    fn from_git_url(url: &GitUrl<'a>) -> Result<Self, GitUrlParseError> {
+impl GitProvider<GitUrl, GitUrlParseError> for GitLabProvider {
+    fn from_git_url(url: &GitUrl) -> Result<Self, GitUrlParseError> {
         let path = url.path();
         Self::parse_path(path).map(|(_, provider)| provider)
     }

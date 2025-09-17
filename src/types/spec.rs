@@ -3,7 +3,7 @@
 //! Internal structs with RFC 3968 parsing logic for Git urls
 //!
 
-use getset::CopyGetters;
+use getset::Getters;
 #[cfg(feature = "log")]
 use log::debug;
 use nom::Finish;
@@ -17,16 +17,16 @@ use nom::sequence::{pair, preceded, separated_pair, terminated};
 use nom::{IResult, Parser, combinator::opt};
 
 /// Top-level struct for RFC 3986 spec parser
-#[derive(Debug, Default, Clone, Copy, CopyGetters)]
-#[getset(get_copy = "pub")]
-pub(crate) struct UrlSpecParser<'url> {
+#[derive(Debug, Default, Clone, Getters)]
+#[getset(get = "pub")]
+pub(crate) struct UrlSpecParser {
     /// RFC 3986 scheme
-    pub(crate) scheme: Option<&'url str>,
+    pub(crate) scheme: Option<String>,
     /// RFC 3986 hier-part
-    pub(crate) hier_part: UrlHierPart<'url>,
+    pub(crate) hier_part: UrlHierPart,
 }
 
-impl<'url> UrlSpecParser<'url> {
+impl UrlSpecParser {
     /// https://datatracker.ietf.org/doc/html/rfc3986
     /// Based on rfc3986, but does not strictly cover the spec
     /// * No support for:
@@ -36,7 +36,7 @@ impl<'url> UrlSpecParser<'url> {
     ///     * parsing ssh git urls which use ":" as a delimiter between the authority and path
     ///     * parsing userinfo into user:token (but its officially deprecated, per #section-3.2.1)
     ///     * some limited support for windows/linux filepaths
-    pub(crate) fn parse(input: &'url str) -> IResult<&'url str, Self> {
+    pub(crate) fn parse(input: &str) -> IResult<&str, Self> {
         let (input, scheme) = Self::parse_scheme.parse(input).finish().unwrap_or_default();
         let (input, heir_part) = Self::parse_hier_part(input).finish().unwrap_or_default();
 
@@ -49,7 +49,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 scheme
-    fn parse_scheme(input: &'url str) -> IResult<&'url str, Option<&'url str>> {
+    fn parse_scheme(input: &str) -> IResult<&str, Option<String>> {
         #[cfg(feature = "log")]
         {
             debug!("Looking ahead before parsing for scheme");
@@ -76,7 +76,7 @@ impl<'url> UrlSpecParser<'url> {
         if Self::short_git_scheme_check(input) {
             // return early if we are normalizing 'git:' (short git)
             if let Ok((input, scheme)) = Self::short_git_scheme_parser().parse(input) {
-                return Ok((input, scheme));
+                return Ok((input, scheme.map(|s| s.to_string())));
             }
         }
 
@@ -122,7 +122,7 @@ impl<'url> UrlSpecParser<'url> {
             debug!("{scheme:?}");
         }
 
-        Ok((input, scheme))
+        Ok((input, scheme.map(|s| s.to_string())))
     }
 
     /// RFC 3986 hier-part
@@ -130,7 +130,7 @@ impl<'url> UrlSpecParser<'url> {
     // The rfc says parsing the "//" part of the uri belongs to the hier-part parsing
     // but we only support common internet protocols, file paths, but not other "baseless" ones
     // so it is sensible for this move it with scheme parsing to support git user service urls
-    fn parse_hier_part(input: &'url str) -> IResult<&'url str, UrlHierPart<'url>> {
+    fn parse_hier_part(input: &str) -> IResult<&str, UrlHierPart> {
         #[cfg(feature = "log")]
         {
             debug!("Parsing for heir-part");
@@ -152,7 +152,10 @@ impl<'url> UrlSpecParser<'url> {
         )
         .parse(input)?;
 
-        let hier_part = UrlHierPart { authority, path };
+        let hier_part = UrlHierPart {
+            authority,
+            path: path.to_string(),
+        };
 
         #[cfg(feature = "log")]
         {
@@ -164,7 +167,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 authority
-    fn parse_authority(input: &'url str) -> IResult<&'url str, UrlAuthority<'url>> {
+    fn parse_authority(input: &str) -> IResult<&str, UrlAuthority> {
         #[cfg(feature = "log")]
         {
             debug!("Parsing for Authority");
@@ -229,7 +232,7 @@ impl<'url> UrlSpecParser<'url> {
 
         let authority = UrlAuthority {
             userinfo,
-            host,
+            host: host.map(|h| h.to_string()),
             port,
         };
 
@@ -243,7 +246,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 userinfo
-    fn parse_userinfo(authority_input: &'url str) -> IResult<&'url str, UrlUserInfo<'url>> {
+    fn parse_userinfo(authority_input: &str) -> IResult<&str, UrlUserInfo> {
         // Peek for username@
         #[cfg(feature = "log")]
         {
@@ -320,7 +323,10 @@ impl<'url> UrlSpecParser<'url> {
             (None, None)
         };
 
-        let userinfo = UrlUserInfo { user, token };
+        let userinfo = UrlUserInfo {
+            user: user.map(|u| u.to_string()),
+            token: token.map(|u| u.to_string()),
+        };
 
         #[cfg(feature = "log")]
         {
@@ -332,7 +338,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 port
-    fn parse_port(authority_input: &'url str) -> IResult<&'url str, Option<u16>> {
+    fn parse_port(authority_input: &str) -> IResult<&str, Option<u16>> {
         #[cfg(feature = "log")]
         {
             debug!("Parsing port");
@@ -364,7 +370,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 path-abempty
-    fn path_abempty_parser(
+    fn path_abempty_parser<'url>(
     ) -> impl Parser<
         &'url str,
         Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
@@ -388,7 +394,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// Not part of RFC 3986 - ssh-based url path
-    fn path_ssh_parser(
+    fn path_ssh_parser<'url>(
     ) -> impl Parser<
         &'url str,
         Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
@@ -412,7 +418,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// RFC 3986 path-rootless
-    fn path_rootless_parser(
+    fn path_rootless_parser<'url>(
     ) -> impl Parser<
         &'url str,
         Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
@@ -435,7 +441,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// consuming parser for `git:` (short git) as scheme for normalizing
-    fn short_git_scheme_parser() -> impl Parser<
+    fn short_git_scheme_parser<'url>() -> impl Parser<
         &'url str,
         Output = <dyn Parser<
             &'url str,
@@ -459,7 +465,7 @@ impl<'url> UrlSpecParser<'url> {
     }
 
     /// Non-consuming check for `git:` (short git) as scheme for normalizing
-    fn short_git_scheme_check(input: &'url str) -> bool {
+    fn short_git_scheme_check(input: &str) -> bool {
         context(
             "short git validate",
             peek(terminated(
@@ -473,35 +479,35 @@ impl<'url> UrlSpecParser<'url> {
 }
 
 /// RFC 3986 userinfo
-#[derive(Debug, Default, Clone, Copy, CopyGetters)]
-#[getset(get_copy = "pub")]
-pub(crate) struct UrlUserInfo<'url> {
+#[derive(Debug, Default, Clone, Getters)]
+#[getset(get = "pub")]
+pub(crate) struct UrlUserInfo {
     /// RFC 3986 Userinfo
-    pub(crate) user: Option<&'url str>,
+    pub(crate) user: Option<String>,
     /// Non-spec, deprecated
-    pub(crate) token: Option<&'url str>,
+    pub(crate) token: Option<String>,
 }
 
 /// RFC 3986 authority
-#[derive(Debug, Default, Clone, Copy, CopyGetters)]
-#[getset(get_copy = "pub")]
-pub(crate) struct UrlAuthority<'url> {
+#[derive(Debug, Default, Clone, Getters)]
+#[getset(get = "pub")]
+pub(crate) struct UrlAuthority {
     /// RFC 3986 Username, non-spec token
-    pub(crate) userinfo: UrlUserInfo<'url>,
+    pub(crate) userinfo: UrlUserInfo,
     /// RFC 3986 Host
-    pub(crate) host: Option<&'url str>,
+    pub(crate) host: Option<String>,
     /// RFC 3986 Port
     pub(crate) port: Option<u16>,
 }
 
 /// RFC 3986 hier-part
-#[derive(Debug, Default, Clone, Copy, CopyGetters)]
-#[getset(get_copy = "pub")]
-pub(crate) struct UrlHierPart<'url> {
+#[derive(Debug, Default, Clone, Getters)]
+#[getset(get = "pub")]
+pub(crate) struct UrlHierPart {
     /// RFC 3986 authority
-    pub(crate) authority: UrlAuthority<'url>,
+    pub(crate) authority: UrlAuthority,
     /// RFC 3986 relative-part
-    pub(crate) path: &'url str,
+    pub(crate) path: String,
 }
 
 /// RFC 3986 pchar

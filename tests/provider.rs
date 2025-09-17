@@ -46,7 +46,7 @@ fn ssh_generic_git() {
 fn custom_provider() {
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct TestProvider;
-    impl GitProvider<GitUrl<'_>, GitUrlParseError> for TestProvider {
+    impl GitProvider<GitUrl, GitUrlParseError> for TestProvider {
         fn from_git_url(_url: &GitUrl) -> Result<Self, GitUrlParseError> {
             Ok(Self)
         }
