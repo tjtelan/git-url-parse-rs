@@ -90,8 +90,11 @@ impl<'a> GenericProvider<'a> {
     /// Parse the most common form of git url by offered by git providers
     fn parse_path(input: &str) -> Result<(&str, GenericProvider), GitUrlParseError> {
         let (input, _) = opt(tag("/")).parse(input)?;
-        let (input, (user, repo)) =
-            separated_pair(is_not("/"), tag("/"), take_until(".git")).parse(input)?;
+        let (input, (user, repo)) = if input.ends_with(".git") {
+            separated_pair(is_not("/"), tag("/"), take_until(".git")).parse(input)?
+        } else {
+            separated_pair(is_not("/"), tag("/"), is_not("/")).parse(input)?
+        };
         Ok((input, GenericProvider { owner: user, repo }))
     }
 

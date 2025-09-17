@@ -210,6 +210,25 @@ fn ssh_gitlab_subgroups() {
 }
 
 #[test]
+fn url_without_git_suffix() {
+    let _ = env_logger::try_init();
+    let test_url = "http://git.example.com:3000/user/repo";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    debug!("{:#?}", parsed);
+
+    let provider_info: GenericProvider = parsed.provider_info().unwrap();
+    debug!("{:#?}", provider_info);
+
+    let owner = "user";
+    let repo = "repo";
+    let full = format!("{owner}/{repo}");
+
+    assert_eq!(provider_info.owner(), owner);
+    assert_eq!(provider_info.repo(), repo);
+    assert_eq!(provider_info.fullname(), full);
+}
+
+#[test]
 fn filepath() {
     let _ = env_logger::try_init();
     let test_url = "file:///home/user/Documents/";
