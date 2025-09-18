@@ -15,9 +15,9 @@
 //! - 🏗️ Host provider info extraction
 //!   - Easy to implement trait [`GitProvider`](crate::types::provider::GitProvider) for custom provider parsing
 //!   - Built-in support for multiple Git hosting providers
-//!       * [Generic](crate::types::provider::GenericProvider) (`git@host:owner/repo.git` style urls)
-//!       * [GitLab](crate::types::provider::GitLabProvider)
-//!       * [Azure DevOps](crate::types::provider::AzureDevOpsProvider)
+//!       * [Generic](crate::types::provider::generic::GenericProvider) (`git@host:owner/repo.git` style urls)
+//!       * [GitLab](crate::types::provider::gitlab::GitLabProvider)
+//!       * [Azure DevOps](crate::types::provider::azure_devops::AzureDevOpsProvider)
 //!
 //! ## Quick Example
 //!
@@ -90,7 +90,12 @@
 //! #### `url`
 //! (**enabled by default**)
 //!
-//! Uses [url](https://docs.rs/url/latest/) during parsing for full url validation
+//! `GitUrl` parsing finishes with [url](https://docs.rs/url/latest/) during parsing for full url validation
+//!
+//! [`GitUrl::parse_to_url`] will normalize an ssh-based url and return [`url::Url`](https://docs.rs/url/latest/url/struct.Url.html)
+//!
+//! You can use `url::Url` with the built-in [`GitProvider`](crate::types::provider::GitProvider) host parsers. See the `url_interop` tests for examples
+//!
 //!
 
 pub mod types;
