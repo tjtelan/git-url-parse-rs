@@ -274,6 +274,23 @@ impl GitUrl {
     }
 
     /// Normalize input into form that can be used by [`Url::parse`](https://docs.rs/url/latest/url/struct.Url.html#method.parse)
+    ///
+    /// ```
+    /// use git_url_parse::GitUrl;
+    /// #[cfg(feature = "url")]
+    /// use url::Url;
+    ///
+    /// fn main() -> Result<(), git_url_parse::GitUrlParseError> {
+    ///     let ssh_url = GitUrl::parse_to_url("git@github.com:tjtelan/git-url-parse-rs.git")?;
+    ///
+    ///     assert_eq!(ssh_url.scheme(), "ssh");
+    ///     assert_eq!(ssh_url.username(), "git");
+    ///     assert_eq!(ssh_url.host_str(), Some("github.com"));
+    ///     assert_eq!(ssh_url.path(), "/tjtelan/git-url-parse-rs.git");
+    ///     Ok(())
+    /// }
+    /// ```
+    ///
     #[cfg(feature = "url")]
     pub fn parse_to_url(input: &str) -> Result<Url, GitUrlParseError> {
         let git_url = Self::parse_to_git_url(input)?;
