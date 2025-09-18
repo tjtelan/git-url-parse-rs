@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.5.3...v0.6.0) - 2025-09-18
+
+### Added
+
+- Add interoperable support for `url::Url` ([#74](https://github.com/tjtelan/git-url-parse-rs/pull/74))
+
+### Other
+
+- Remove lifetime from GitUrl ([#72](https://github.com/tjtelan/git-url-parse-rs/pull/72))
+
 ## [0.5.3](https://github.com/tjtelan/git-url-parse-rs/compare/v0.5.2...v0.5.3) - 2025-09-17
 
 ### Fixed
