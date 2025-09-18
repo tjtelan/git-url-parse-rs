@@ -196,6 +196,24 @@ impl TryFrom<GitUrl> for Url {
     }
 }
 
+#[cfg(feature = "url")]
+impl TryFrom<&Url> for GitUrl {
+    type Error = GitUrlParseError;
+    fn try_from(value: &Url) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        GitUrl::parse(value.as_str())
+    }
+}
+
+#[cfg(feature = "url")]
+impl TryFrom<Url> for GitUrl {
+    type Error = GitUrlParseError;
+    fn try_from(value: Url) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        GitUrl::parse(value.as_str())
+    }
+}
+
 impl GitUrl {
     /// Returns `GitUrl` after removing all user info values
     pub fn trim_auth(&self) -> GitUrl {
@@ -219,8 +237,16 @@ impl GitUrl {
     /// #  }
     /// ```
     pub fn parse(input: &str) -> Result<Self, GitUrlParseError> {
-        let mut git_url_result = GitUrl::default();
+        let git_url = Self::parse_to_git_url(input)?;
 
+        git_url.is_valid()?;
+
+        Ok(git_url)
+    }
+
+    /// Internal parse to `GitUrl` without further validation
+    fn parse_to_git_url(input: &str) -> Result<Self, GitUrlParseError> {
+        let mut git_url_result = GitUrl::default();
         // Error if there are null bytes within the url
         // https://github.com/tjtelan/git-url-parse-rs/issues/16
         if input.contains('\0') {
@@ -292,6 +318,14 @@ impl GitUrl {
         git_url_result.is_valid()?;
 
         Ok(git_url_result)
+    }
+
+    /// Normalize input into form that can be used by [`Url::parse`](https://docs.rs/url/latest/url/struct.Url.html#method.parse)
+    #[cfg(feature = "url")]
+    pub fn parse_to_url(input: &str) -> Result<Url, GitUrlParseError> {
+        let git_url = Self::parse_to_git_url(input)?;
+
+        Ok(Url::try_from(git_url)?)
     }
 
     /// ```
