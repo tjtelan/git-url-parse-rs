@@ -67,15 +67,6 @@ pub struct GitUrl {
     hint: GitUrlParseHint,
 }
 
-/// Build the printable GitUrl from its components
-impl fmt::Display for GitUrl {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let git_url_str = self.display();
-
-        write!(f, "{git_url_str}",)
-    }
-}
-
 impl GitUrl {
     /// scheme name (i.e. `scheme://`)
     pub fn scheme(&self) -> Option<&str> {
@@ -130,7 +121,7 @@ impl GitUrl {
     }
 
     /// This method rebuilds the printable GitUrl from its components.
-    /// `url_compat` results in output that can be parsed by the `url` crate
+    /// `url_compat` results in output that can be parsed by the [`url`](https://docs.rs/url/latest/url/) crate
     fn build_string(&self, url_compat: bool) -> String {
         let scheme = if self.print_scheme() || url_compat {
             if let Some(scheme) = self.scheme() {
@@ -176,45 +167,7 @@ impl GitUrl {
         let git_url_str = format!("{scheme}{auth_info}{host}{port}{path}");
         git_url_str
     }
-}
 
-#[cfg(feature = "url")]
-impl TryFrom<&GitUrl> for Url {
-    type Error = url::ParseError;
-    fn try_from(value: &GitUrl) -> Result<Self, Self::Error> {
-        // Since we don't fully implement any spec, we'll rely on the url crate
-        Url::parse(&value.url_compat_display())
-    }
-}
-
-#[cfg(feature = "url")]
-impl TryFrom<GitUrl> for Url {
-    type Error = url::ParseError;
-    fn try_from(value: GitUrl) -> Result<Self, Self::Error> {
-        // Since we don't fully implement any spec, we'll rely on the url crate
-        Url::parse(&value.url_compat_display())
-    }
-}
-
-#[cfg(feature = "url")]
-impl TryFrom<&Url> for GitUrl {
-    type Error = GitUrlParseError;
-    fn try_from(value: &Url) -> Result<Self, Self::Error> {
-        // Since we don't fully implement any spec, we'll rely on the url crate
-        GitUrl::parse(value.as_str())
-    }
-}
-
-#[cfg(feature = "url")]
-impl TryFrom<Url> for GitUrl {
-    type Error = GitUrlParseError;
-    fn try_from(value: Url) -> Result<Self, Self::Error> {
-        // Since we don't fully implement any spec, we'll rely on the url crate
-        GitUrl::parse(value.as_str())
-    }
-}
-
-impl GitUrl {
     /// Returns `GitUrl` after removing all user info values
     pub fn trim_auth(&self) -> GitUrl {
         let mut new_giturl = self.clone();
@@ -244,7 +197,7 @@ impl GitUrl {
         Ok(git_url)
     }
 
-    /// Internal parse to `GitUrl` without further validation
+    /// Internal parse to `GitUrl` without validation steps
     fn parse_to_git_url(input: &str) -> Result<Self, GitUrlParseError> {
         let mut git_url_result = GitUrl::default();
         // Error if there are null bytes within the url
@@ -412,5 +365,48 @@ impl GitUrl {
         }
 
         Ok(())
+    }
+}
+
+/// Build the printable GitUrl from its components
+impl fmt::Display for GitUrl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let git_url_str = self.display();
+
+        write!(f, "{git_url_str}",)
+    }
+}
+
+#[cfg(feature = "url")]
+impl TryFrom<&GitUrl> for Url {
+    type Error = url::ParseError;
+    fn try_from(value: &GitUrl) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        Url::parse(&value.url_compat_display())
+    }
+}
+
+#[cfg(feature = "url")]
+impl TryFrom<GitUrl> for Url {
+    type Error = url::ParseError;
+    fn try_from(value: GitUrl) -> Result<Self, Self::Error> {
+        // Since we don't fully implement any spec, we'll rely on the url crate
+        Url::parse(&value.url_compat_display())
+    }
+}
+
+#[cfg(feature = "url")]
+impl TryFrom<&Url> for GitUrl {
+    type Error = GitUrlParseError;
+    fn try_from(value: &Url) -> Result<Self, Self::Error> {
+        GitUrl::parse(value.as_str())
+    }
+}
+
+#[cfg(feature = "url")]
+impl TryFrom<Url> for GitUrl {
+    type Error = GitUrlParseError;
+    fn try_from(value: Url) -> Result<Self, Self::Error> {
+        GitUrl::parse(value.as_str())
     }
 }

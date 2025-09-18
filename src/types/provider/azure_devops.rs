@@ -4,6 +4,7 @@ use crate::{GitUrl, GitUrlParseError};
 
 use getset::Getters;
 use nom::Parser;
+use nom::branch::alt;
 use nom::bytes::complete::{is_not, tag, take_until};
 use nom::combinator::opt;
 use nom::sequence::{preceded, separated_pair, terminated};
@@ -82,8 +83,10 @@ impl AzureDevOpsProvider {
 
     /// Parse the path of an ssh url for Azure Devops patterns
     fn parse_ssh_path(input: &str) -> Result<(&str, AzureDevOpsProvider), GitUrlParseError> {
-        // Handle optional leading v3/ or other prefix
-        let (input, _) = opt(take_until("/")).parse(input)?;
+        // Handle optional leading /v3/ or v3/ prefix
+        let (input, _) =
+            opt(alt((preceded(tag("/"), tag("v3/")), take_until("/")))).parse(input)?;
+
         let (input, _) = opt(tag("/")).parse(input)?;
 
         // Parse org/project/repo

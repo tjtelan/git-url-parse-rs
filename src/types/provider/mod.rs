@@ -9,15 +9,18 @@
 //! - [GitLab](crate::types::provider::GitLabProvider)
 //! - Custom (via [`GitProvider`] trait)
 
-mod azure_devops;
-mod generic;
-mod gitlab;
+/// Azure DevOps git host
+pub mod azure_devops;
+/// Generic git host
+pub mod generic;
+/// GitLab git host
+pub mod gitlab;
 
 pub use azure_devops::AzureDevOpsProvider;
 pub use generic::GenericProvider;
 pub use gitlab::GitLabProvider;
 
-/// Secondary parser called by [`GitUrl::provider_info()`] to extract Git host provider info from url
+/// Secondary parser called by [`crate::GitUrl::provider_info()`] to extract Git host provider info from url
 ///
 /// ```
 /// // Custom trait example
@@ -43,6 +46,8 @@ pub use gitlab::GitLabProvider;
 ///  let expected = MyCustomProvider;
 ///  assert_eq!(provider_info, expected)
 /// ```
+///
+/// With `feature = url`, there is support for parsing Git host provider info from [`url::Url`](https://docs.rs/url/latest/url/struct.Url.html)
 pub trait GitProvider<T, E>: Clone + std::fmt::Debug {
     /// Trait method called by `GitUrl::provider_info()`
     ///
