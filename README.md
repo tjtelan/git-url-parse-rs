@@ -23,9 +23,9 @@ Parses  url used by git (e.g. `git clone <url>`)
 - 🏗️ Host provider info extraction
   - Easy to implement trait [`GitProvider`](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/trait.GitProvider.html) for custom provider parsing
   - Built-in support for multiple Git hosting providers
-      * [Generic](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/struct.GenericProvider.html) (`git@host:owner/repo.git` style urls)
-      * [GitLab](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/struct.GitLabProvider.html)
-      * [Azure DevOps](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/struct.AzureDevOpsProvider.html)
+      * [Generic](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/generic/struct.GenericProvider.html) (`git@host:owner/repo.git` style urls)
+      * [GitLab](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/gitlab/struct.GitLabProvider.html)
+      * [Azure DevOps](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/azure_devops/struct.AzureDevOpsProvider.html)
 
 ## Quick Example
 
@@ -58,7 +58,7 @@ fn main() -> Result<(), git_url_parse::GitUrlParseError> {
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct CustomProvider;
     
-    impl GitProvider<GitUrl<'_>, GitUrlParseError> for CustomProvider {
+    impl GitProvider<GitUrl, GitUrlParseError> for CustomProvider {
         fn from_git_url(_url: &GitUrl) -> Result<Self, GitUrlParseError> {
             // Your custom provider parsing here
             Ok(Self)
@@ -98,7 +98,12 @@ Enable for [serde](https://docs.rs/serde/latest/) `Serialize`/`Deserialize` on [
 #### `url`
 (**enabled by default**)
 
-Uses [url](https://docs.rs/url/latest/) during parsing for full url validation
+`GitUrl` parsing finishes with [url](https://docs.rs/url/latest/) during parsing for full url validation
+
+[`GitUrl::parse_to_url`] will normalize an ssh-based url and return [`url::Url`](https://docs.rs/url/latest/url/struct.Url.html)
+
+You can use `url::Url` with the built-in [`GitProvider`](https://docs.rs/git-url-parse/latest/git_url_parse/types/provider/trait.GitProvider.html) host parsers. See the `url_interop` tests for examples
+
 
 <!-- cargo-rdme end -->
 
