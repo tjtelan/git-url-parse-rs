@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/tjtelan/git-url-parse-rs/compare/v0.6.0...v0.6.1) - 2025-10-30
+
+### Fixed
+
+- ssh schema parsing ([#81](https://github.com/tjtelan/git-url-parse-rs/pull/81))
+
 ## [0.6.0](https://github.com/tjtelan/git-url-parse-rs/compare/v0.5.3...v0.6.0) - 2025-09-18
 
 ### Added
