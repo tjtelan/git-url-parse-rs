@@ -35,6 +35,40 @@ fn ssh_no_scheme_no_user() {
     assert_eq!(parsed.print_scheme(), false);
 }
 
+#[test]
+fn git_plus_ssh_schema() {
+    let _ = env_logger::try_init();
+    let test_url = "git+ssh://host.tld/user/project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    debug!("{:#?}", parsed);
+
+    assert_eq!(parsed.to_string(), test_url);
+    assert_eq!(parsed.scheme(), Some("git+ssh"));
+    assert_eq!(parsed.user(), None);
+    assert_eq!(parsed.password(), None);
+    assert_eq!(parsed.host(), Some("host.tld"));
+    assert_eq!(parsed.port(), None);
+    assert_eq!(parsed.path(), "/user/project-name.git");
+    assert_eq!(parsed.print_scheme(), true);
+}
+
+#[test]
+fn ssh_schema() {
+    let _ = env_logger::try_init();
+    let test_url = "ssh://host.tld/user/project-name.git";
+    let parsed = GitUrl::parse(test_url).expect("URL parse failed");
+    debug!("{:#?}", parsed);
+
+    assert_eq!(parsed.to_string(), test_url);
+    assert_eq!(parsed.scheme(), Some("ssh"));
+    assert_eq!(parsed.user(), None);
+    assert_eq!(parsed.password(), None);
+    assert_eq!(parsed.host(), Some("host.tld"));
+    assert_eq!(parsed.port(), None);
+    assert_eq!(parsed.path(), "/user/project-name.git");
+    assert_eq!(parsed.print_scheme(), true);
+}
+
 // Specific service support
 #[test]
 fn https_user_bitbucket() {

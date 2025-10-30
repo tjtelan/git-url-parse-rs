@@ -229,7 +229,13 @@ impl GitUrl {
         // We use the GitUrlParseHint to validate or adjust formatting path, if necessary
         let hint = if let Some(scheme) = scheme.as_ref() {
             if scheme.contains("ssh") {
-                GitUrlParseHint::Sshlike
+                // ssh:// URLs without user should behave like HTTP
+                // ssh:// URLs with user should behave like SSH
+                if user.is_none() {
+                    GitUrlParseHint::Httplike
+                } else {
+                    GitUrlParseHint::Sshlike
+                }
             } else {
                 match scheme.to_lowercase().as_str() {
                     "file" => GitUrlParseHint::Filelike,
