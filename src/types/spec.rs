@@ -370,14 +370,8 @@ impl UrlSpecParser {
     }
 
     /// RFC 3986 path-abempty
-    fn path_abempty_parser<'url>(
-    ) -> impl Parser<
-        &'url str,
-        Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
-            &'url str,
-        >>::Output,
-        Error = nom::error::Error<&'url str>,
-    >{
+    fn path_abempty_parser<'url>()
+    -> impl Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> {
         #[cfg(feature = "log")]
         {
             debug!("parsing abempty path");
@@ -394,14 +388,8 @@ impl UrlSpecParser {
     }
 
     /// Not part of RFC 3986 - ssh-based url path
-    fn path_ssh_parser<'url>(
-    ) -> impl Parser<
-        &'url str,
-        Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
-            &'url str,
-        >>::Output,
-        Error = nom::error::Error<&'url str>,
-    >{
+    fn path_ssh_parser<'url>()
+    -> impl Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> {
         #[cfg(feature = "log")]
         {
             debug!("Parsing ssh path");
@@ -418,14 +406,8 @@ impl UrlSpecParser {
     }
 
     /// RFC 3986 path-rootless
-    fn path_rootless_parser<'url>(
-    ) -> impl Parser<
-        &'url str,
-        Output = <dyn Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> as Parser<
-            &'url str,
-        >>::Output,
-        Error = nom::error::Error<&'url str>,
-    >{
+    fn path_rootless_parser<'url>()
+    -> impl Parser<&'url str, Output = &'url str, Error = nom::error::Error<&'url str>> {
         #[cfg(feature = "log")]
         {
             debug!("Parsing rootless path");
@@ -441,15 +423,9 @@ impl UrlSpecParser {
     }
 
     /// consuming parser for `git:` (short git) as scheme for normalizing
-    fn short_git_scheme_parser<'url>() -> impl Parser<
-        &'url str,
-        Output = <dyn Parser<
-            &'url str,
-            Output = Option<&'url str>,
-            Error = nom::error::Error<&'url str>,
-        > as Parser<&'url str>>::Output,
-        Error = nom::error::Error<&'url str>,
-    > {
+    fn short_git_scheme_parser<'url>()
+    -> impl Parser<&'url str, Output = Option<&'url str>, Error = nom::error::Error<&'url str>>
+    {
         #[cfg(feature = "log")]
         {
             debug!("Parsing short git scheme");
